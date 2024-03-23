@@ -9,15 +9,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/khaosdoctor/typescript-blockchain.git"
+    "url": "git+https://github.com/pedrorocha01/blockchain-project"
   },
   "keywords": [],
-  "author": "Lucas Santos <hello@lsantos.dev> (https://lsantos.dev/)",
+  "author": "Pedro Julio Rocha",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/khaosdoctor/typescript-blockchain/issues"
+    "url": "https://github.com/pedrorocha01/blockchain-project/issues"
   },
-  "homepage": "https://github.com/khaosdoctor/typescript-blockchain#readme",
+  "homepage": "https://github.com/pedrorocha01/blockchain-project#readme",
   "devDependencies": {
     "@commitlint/cli": "^16.1.0",
     "@commitlint/config-conventional": "^16.0.0",
