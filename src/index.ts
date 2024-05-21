@@ -4,16 +4,6 @@ const blockchain = new BlockChain(Number(process.argv[2] || 4))
 const blockNumber = +process.argv[3] || 10
 let chain = blockchain.chain
 
-const readline = require("readline")
-const fs = require("fs")
-const line = readline.createInterface({
-  input: fs.createReadStream("C:\Users\pedro\OneDrive\Área de Trabalho\typescript-blockchain-main\src\arquivo.csv")
-});
-
-line.on( "line", (data: any) =>{
-  console.log(data);
-});
-
 
 for (let i = 1; i <= blockNumber; i++) {
   const block = blockchain.createBlock(`Block ${i}`)
@@ -23,3 +13,23 @@ for (let i = 1; i <= blockNumber; i++) {
 
 console.log('--- GENERATED CHAIN ---\n')
 console.log(chain)
+
+const fs = require('node:fs');
+fs.readFile('src/arquivo.csv', 'utf8', (err: any, data: any) => {
+  if (err) {
+    console.error(err);
+    return;
+  }
+  console.log(data);
+  var linhas = data.split("\r\n", 3);
+  console.log(linhas);
+  var  i = 0;
+  var colunas = [];
+  for(i =0 ; i < 3; i++){
+    colunas[i] = linhas[i];
+    var items = colunas[i].split(";", 3);
+    console.log(items);
+  }
+});
+
+
