@@ -32,4 +32,13 @@ fs.readFile('src/arquivo.csv', 'utf8', (err: any, data: any) => {
   }
 });
 
+const content = 'Some content!';
+fs.writeFile('src/resumeBlockchain.txt', content, (err: any) => {
+  if (err) {
+    console.error(err);
+  } else {
+    // file written successfully
+  }
+});
+
 
