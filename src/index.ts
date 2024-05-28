@@ -21,13 +21,13 @@ fs.readFile('src/arquivo.csv', 'utf8', (err: any, data: any) => {
     return;
   }
   console.log(data);
-  var linhas = data.split("\r\n", 3);
+  var linhas = data.split("\r\n", 6);
   console.log(linhas);
   var  i = 0;
   var colunas = [];
-  for(i =0 ; i < 3; i++){
+  for(i =0 ; i < 6; i++){
     colunas[i] = linhas[i];
-    var items = colunas[i].split(";", 3);
+    var items = colunas[i].split(";", 6);
     console.log(items);
   }
 });
