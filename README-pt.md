@@ -1,14 +1,8 @@
 # Blockchain TypeScript
 
-> 🇧🇷 Uma implementação simples de blockchain em TypeScript.
+> 🇧🇷 Implementação de blockchain em TypeScript.
 
 ## Descrição
-
-Esta é uma implementação simples de blockchain no TypeScript. Os objetivos são puramente educacionais.
-
-Esta é __não__ uma implementação de blockchain com todos os recursos. Pretende-se apenas mostrar como usar os conceitos básicos de blockchain.
-
-Por enquanto, não é distribuída. No entanto, há planos para torná-la ainda mais robusta e distribuída usando comunicação em rede.
 
 Características atuais:
 
