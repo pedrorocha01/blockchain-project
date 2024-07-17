@@ -96,7 +96,7 @@ try {
  
        dataVoteBlockchain = dataBlockchain;
 
-  fs.writeFileSync('src/newResumeBlockchain.txt', dataVoteBlockchain);
+  fs.writeFileSync('src/voteBlockchain.txt', dataVoteBlockchain);
   // file written successfully
 } catch (err) {
   console.error(err);
@@ -106,7 +106,7 @@ try {
 let resumeChain: string[] = [];
 
 try {
-  const data = fs.readFileSync('src/newResumeBlockchain.txt', 'utf8');
+  const data = fs.readFileSync('src/voteBlockchain.txt', 'utf8');
   console.log(data);
   
 
