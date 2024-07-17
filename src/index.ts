@@ -1,4 +1,5 @@
 import { BlockChain } from './blockchain'
+import { hash, isHashProofed } from './helpers'
 
 const blockchain = new BlockChain(Number(process.argv[2] || 4))
 const blockNumber = +process.argv[3] || 10
@@ -8,7 +9,7 @@ const fs = require('node:fs');
 
 //BLOCKCHAIN DE VOTOS
 let voteData: string[] = [];
-let opcoesVoto: string[] = [];
+let opcoesVoto;
 let qtdVotos: number[] = [];
 try {
   const data = fs.readFileSync('src/votos.csv', 'utf8');
@@ -27,8 +28,8 @@ try {
       voteData[i] = linhas[i+1];
       vote = voteData[i].split(";", 2);
       for (let j = 0; j < opcoesVoto.length; j++) {
-        if(vote = opcoesVoto[j]){
-          qtdVotos[j] = (qtdVotos[j] != undefined) ? qtdVotos[j] = 1 : qtdVotos[j] = qtdVotos[j] + 1;
+        if(vote[1] = opcoesVoto[j]){
+          qtdVotos[j] = (qtdVotos[j] == undefined) ? qtdVotos[j] = 1 : qtdVotos[j] = qtdVotos[j] + 1;
         }
       }
     }
@@ -58,8 +59,9 @@ try {
        //escrevendo blockchain saída
        let dataBlockchain : string = '';
        let title: string = 'Number;BlockHash;Previous_BlockHash;Content_Hash;Nonce;TimeStamp';
-       let genesis : string = '0;0000000000000000000000000000000000000000000000000000000000000000;0000000000000000000000000000000000000000000000000000000000000000;0000000000000000000000000000000000000000000000000000000000000000;0;00/00/0000 00:00:00';
-       dataBlockchain = dataBlockchain.concat(title, "\r\n", genesis, "\r\n");
+       //let genesis : string = '0;0000000000000000000000000000000000000000000000000000000000000000;0000000000000000000000000000000000000000000000000000000000000000;0000000000000000000000000000000000000000000000000000000000000000;0;00/00/0000 00:00:00';
+       //dataBlockchain = dataBlockchain.concat(title, "\r\n", genesis, "\r\n");
+       dataBlockchain = dataBlockchain.concat(title, "\r\n");
        //header
        let _nonce : string;
        let _blockHash : string;
@@ -77,8 +79,9 @@ try {
            _sequence = newChain[index].payload.sequence.toString();
            _timestamp = newChain[index].payload.timestamp.toString();
            _data = newChain[index].payload.data;
+           _data = _data.replace(";", ":");
            _previousHah = newChain[index].payload.previousHash;
-           line = line.concat(_sequence, ";", _blockHash, ";", _previousHah, ";", "DADOS: " , _data, ";", _nonce, ";", _timestamp);
+           line = line.concat(_sequence, ";", _blockHash, ";", _previousHah, ";", _data, ";", _nonce, ";", _timestamp);
            dataBlockchain = dataBlockchain.concat(line, "\r\n");
        }
  
@@ -150,7 +153,7 @@ try {
     _timestamp = chain[index].payload.timestamp.toString();
     _data = chain[index].payload.data;
     _previousHah = chain[index].payload.previousHash;
-    line = line.concat(_sequence, ";", _blockHash, ";", _previousHah, ";", "DADOS: " , _data, ";", _nonce, ";", _timestamp)
+    line = line.concat(_sequence, ";", _blockHash, ";", _previousHah, ";", _data, ";", _nonce, ";", _timestamp)
     dataBlockchain = dataBlockchain.concat(line, "\r\n");
  }
 

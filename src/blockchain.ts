@@ -25,7 +25,7 @@ export class BlockChain {
     const payload = {
       sequence: 0,
       timestamp: +new Date(),
-      data: 'Genesis Block',
+      data: '0000000000000000000000000000000000000000000000000000000000000000',
       previousHash: ''
     }
     return {
