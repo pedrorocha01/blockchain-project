@@ -10,16 +10,20 @@ const fs = require('node:fs');
 //BLOCKCHAIN DE VOTOS
 let voteData: string[] = [];
 let opcoesVoto;
-let qtdVotos: number[] = [];
+let qtdVotos: string[] = [];
+let qtdOpcoes = 3;
+let qtdVotantes = 10;
+
 try {
   const data = fs.readFileSync('src/votos.csv', 'utf8');
   console.log(data);
 
     //const qtdlinhas = data.match('\r\n');
-    const qtdLinhas = 10;
+    const qtdLinhas = qtdVotantes;
     const count = qtdLinhas + 1;
     var linhas = data.split("\r\n", count);
-    opcoesVoto = linhas[0].split(";", 3);
+    opcoesVoto = linhas[0].split(";", qtdOpcoes);
+    qtdVotos = new Array(qtdOpcoes).fill(0);
     console.log(linhas);
     console.log(opcoesVoto);
     let vote;
@@ -28,22 +32,27 @@ try {
       voteData[i] = linhas[i+1];
       vote = voteData[i].split(";", 2);
       for (let j = 0; j < opcoesVoto.length; j++) {
-        if(vote[1] = opcoesVoto[j]){
-          qtdVotos[j] = (qtdVotos[j] == undefined) ? qtdVotos[j] = 1 : qtdVotos[j] = qtdVotos[j] + 1;
+        if(vote[1] == opcoesVoto[j]){
+          qtdVotos[j] = qtdVotos[j] + 1;
         }
       }
     }
     console.log(qtdVotos);
 
+
 } catch (err) {
   console.error(err);
 }
 
+let resultado = 'RESULTADO: |';
+for (let index = 0; index < qtdVotos.length; index++) {
+  resultado = resultado.concat(opcoesVoto[index]).concat(":").concat(qtdVotos[index]).concat("|");
+}
+
 const newBlockchain = new BlockChain(Number(4))
-const newblockNumber = 10
 let newChain = newBlockchain.chain
 
-for(let i = 0; i < newblockNumber; i++) {
+for(let i = 0; i < qtdVotantes; i++) {
   const newblock = newBlockchain.createBlock(voteData[i])
   const mineInfo = newBlockchain.mineBlock(newblock)
   newChain = newBlockchain.pushBlock(mineInfo.minedBlock)
@@ -72,7 +81,7 @@ try {
        let _previousHah :string;
        let line: string = '';
  
-       for (let index = 0; index < blockNumber+1; index++) {
+       for (let index = 0; index < qtdVotantes+1; index++) {
            line = '';
            _nonce = newChain[index].header.nonce.toString();
            _blockHash = newChain[index].header.blockHash;
@@ -103,23 +112,31 @@ try {
 
     let resumeBlock: string = '';
     //const qtdlinhas = data.match('\r\n');
-    const qtdlinhas = 10;
+    const qtdlinhas = qtdVotantes;
     const count = qtdlinhas + 1;
     var linhas = data.split("\r\n", count);
     const genesisblock:string = linhas[1];
     console.log(linhas);
+    let hashLinha;
+    let hashResume = '';
 
     for(let i = 1 ; i < count ; i++){
       resumeBlock = '';
       resumeBlock = resumeBlock.concat(linhas[i].toString());
       resumeBlock = resumeBlock.concat("\r\n");
-      console.log(resumeBlock);
+      hashLinha = linhas[i].split(";", count);
+      hashResume = hashResume.concat(hashLinha[1]);
+      console.log(hashResume);
       console.log("\n");
-      resumeChain[i] = resumeBlock;
+      // resumeChain[i] = resumeBlock;
     }
+    hashResume = hash(hashResume);
+    resumeChain[0] = resultado.concat("HASH RESUMO:").concat(hashResume);
+
 } catch (err) {
   console.error(err);
 }
+
 
   for(let i = 0; i < blockNumber; i++) {
     const block = blockchain.createBlock(resumeChain[i])
