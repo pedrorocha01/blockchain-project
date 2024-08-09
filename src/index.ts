@@ -14,8 +14,30 @@ let qtdVotos: string[] = [];
 let qtdOpcoes = 3;
 let qtdVotantes = 10;
 
+//ARQUIVOS
+const qtdArq = 3;
+let resultados: string[] = [];
+
+const arq1 = 'src/votos.csv';
+const arq2 = 'src/votos2.csv';
+const arq3 = 'src/votos3.csv';
+const arquivos: string[] = [];
+arquivos[0] = arq1;
+arquivos[1] = arq2;
+arquivos[2] = arq3;
+
+const arqSaida1 = 'src/voteBlockchain.txt';
+const arqSaida2 = 'src/voteBlockchain2.txt';
+const arqSaida3 = 'src/voteBlockchain3.txt';
+const arquivoSaida: string[] = [];
+arquivoSaida[0] = arqSaida1;
+arquivoSaida[1] = arqSaida2;
+arquivoSaida[2] = arqSaida3;
+
+for (let k = 0; k < qtdArq; k++) {
+  
 try {
-  const data = fs.readFileSync('src/votos.csv', 'utf8');
+  const data = fs.readFileSync(arquivos[k], 'utf8');
   console.log(data);
 
     //const qtdlinhas = data.match('\r\n');
@@ -45,9 +67,10 @@ try {
 }
 
 let resultado = 'RESULTADO: |';
-for (let index = 0; index < qtdVotos.length; index++) {
-  resultado = resultado.concat(opcoesVoto[index]).concat(":").concat(qtdVotos[index]).concat("|");
+for (let j = 0; j < qtdVotos.length; j++) {
+  resultado = resultado.concat(opcoesVoto[j]).concat(":").concat(qtdVotos[j]).concat("|");
 }
+resultados[k] = resultado;
 
 const newBlockchain = new BlockChain(Number(4))
 let newChain = newBlockchain.chain
@@ -96,20 +119,22 @@ try {
  
        dataVoteBlockchain = dataBlockchain;
 
-  fs.writeFileSync('src/voteBlockchain.txt', dataVoteBlockchain);
+  fs.writeFileSync(arquivoSaida[k], dataVoteBlockchain);
   // file written successfully
 } catch (err) {
   console.error(err);
 }
 
+}
+
 //BLOCKCHAIN RESUMO
 let resumeChain: string[] = [];
 
+for (let k = 0; k < qtdArq; k++) {
 try {
-  const data = fs.readFileSync('src/voteBlockchain.txt', 'utf8');
+  const data = fs.readFileSync(arquivoSaida[k], 'utf8');
   console.log(data);
   
-
     let resumeBlock: string = '';
     //const qtdlinhas = data.match('\r\n');
     const qtdlinhas = qtdVotantes;
@@ -131,12 +156,13 @@ try {
       // resumeChain[i] = resumeBlock;
     }
     hashResume = hash(hashResume);
-    resumeChain[0] = resultado.concat("HASH RESUMO:").concat(hashResume);
+    resumeChain[k] = resultados[k].concat("HASH RESUMO:").concat(hashResume);
 
 } catch (err) {
   console.error(err);
 }
 
+}
 
   for(let i = 0; i < blockNumber; i++) {
     const block = blockchain.createBlock(resumeChain[i])
@@ -146,6 +172,8 @@ try {
 
   console.log('--- GENERATED CHAIN ---\n')
   console.log(chain)
+
+
 
  //escrevendo blockchain saída
  let dataBlockchain : string = '';

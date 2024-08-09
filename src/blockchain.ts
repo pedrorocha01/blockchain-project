@@ -24,14 +24,16 @@ export class BlockChain {
   private createGenesisBlock () {
     const payload = {
       sequence: 0,
-      timestamp: +new Date(),
+      //timestamp: +new Date(),
+      timestamp: 0,
       data: '0000000000000000000000000000000000000000000000000000000000000000',
       previousHash: ''
     }
     return {
       header: {
         nonce: 0,
-        blockHash: hash(JSON.stringify(payload))
+        //blockHash: hash(JSON.stringify(payload))
+        blockHash: '0000000000000000000000000000000000000000000000000000000000000000'
       },
       payload
     }
