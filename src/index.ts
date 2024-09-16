@@ -81,8 +81,8 @@ for(let i = 0; i < qtdVotantes; i++) {
   newChain = newBlockchain.pushBlock(mineInfo.minedBlock)
 }
 
-console.log('--- GENERATED CHAIN ---\n')
-console.log(newChain)
+//console.log('--- GENERATED CHAIN ---\n')
+//console.log(newChain)
 
 let dataVoteBlockchain: string = ';'
 
@@ -127,13 +127,78 @@ try {
 
 }
 
+//AUDITORIA DOS ARQUIVOS
+for (let k = 0; k < qtdArq; k++) {
+
+console.log("AUDITORIA DO ARQUIVO:" + arquivos[k]);
+
+let auditingFile : string[] = [];
+let auditingBlockchain : string[] = [];
+     
+try {
+  const data = fs.readFileSync(arquivos[k], 'utf8');
+  //console.log(data);
+
+    //const qtdlinhas = data.match('\r\n');
+    const qtdLinhas = qtdVotantes;
+    const count = qtdLinhas + 1;
+    var linhas = data.split("\r\n", count);
+    //console.log(linhas);
+    let vote;
+    for(let i = 0 ; i < qtdLinhas ; i++){
+      auditingFile[i] = linhas[i+1].replace(";", ":");;
+    }
+
+
+} catch (err) {
+  console.error(err);
+}
+
+try {
+  const data = fs.readFileSync(arquivoSaida[k], 'utf8');
+  //console.log(data);
+
+    //const qtdlinhas = data.match('\r\n');
+    const qtdLinhas = qtdVotantes;
+    const count = qtdLinhas + 2;
+    var linhas = data.split("\r\n", count);
+    //console.log(linhas);
+    let blockData;
+    for(let i = 0 ; i < qtdLinhas ; i++){
+      blockData = linhas[i+2]
+      blockData = blockData.split(";", 6);
+      auditingBlockchain[i] = blockData[3];
+    }
+
+} catch (err) {
+  console.error(err);
+}
+
+let fail = 0;
+for (let index = 0; index < qtdVotantes; index++) {
+    if(auditingBlockchain[index] == auditingFile[index]){
+      console.log("Voto auditado:" + auditingFile[index]);
+    }else{
+        fail++;
+    }
+}
+
+if(fail == 0){
+  console.log("Todos os votos auditados com sucesso!\n");
+}else{
+  console.log(fail + " votos foram adulterados.\n")
+}
+
+}
+
+
 //BLOCKCHAIN RESUMO
 let resumeChain: string[] = [];
 
 for (let k = 0; k < qtdArq; k++) {
 try {
   const data = fs.readFileSync(arquivoSaida[k], 'utf8');
-  console.log(data);
+  //console.log(data);
   
     let resumeBlock: string = '';
     //const qtdlinhas = data.match('\r\n');
@@ -141,7 +206,7 @@ try {
     const count = qtdlinhas + 1;
     var linhas = data.split("\r\n", count);
     const genesisblock:string = linhas[1];
-    console.log(linhas);
+    //console.log(linhas);
     let hashLinha;
     let hashResume = '';
 
@@ -151,7 +216,7 @@ try {
       resumeBlock = resumeBlock.concat("\r\n");
       hashLinha = linhas[i].split(";", count);
       hashResume = hashResume.concat(hashLinha[1]);
-      console.log(hashResume);
+      //console.log(hashResume);
       console.log("\n");
       // resumeChain[i] = resumeBlock;
     }
@@ -170,10 +235,8 @@ try {
     chain = blockchain.pushBlock(mineInfo.minedBlock)
   }
 
-  console.log('--- GENERATED CHAIN ---\n')
-  console.log(chain)
-
-
+  //console.log('--- GENERATED CHAIN ---\n')
+  //console.log(chain)
 
  //escrevendo blockchain saída
  let dataBlockchain : string = '';

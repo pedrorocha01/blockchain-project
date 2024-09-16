@@ -27,7 +27,7 @@ export class BlockChain {
       //timestamp: +new Date(),
       timestamp: 0,
       data: '0000000000000000000000000000000000000000000000000000000000000000',
-      previousHash: ''
+      previousHash: '0000000000000000000000000000000000000000000000000000000000000000'
     }
     return {
       header: {
