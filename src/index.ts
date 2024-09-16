@@ -144,7 +144,6 @@ try {
     const count = qtdLinhas + 1;
     var linhas = data.split("\r\n", count);
     //console.log(linhas);
-    let vote;
     for(let i = 0 ; i < qtdLinhas ; i++){
       auditingFile[i] = linhas[i+1].replace(";", ":");;
     }
@@ -271,6 +270,82 @@ try {
 } catch (err) {
   console.error(err);
 }
+
+//AUDITORIA DOS RESULTADOS
+for (let k = 0; k < qtdArq; k++) {
+
+  console.log("AUDITORIA DO ARQUIVO:" + arquivos[k]);
+  
+  let resultadoBlockchain;
+  let resultado = 'RESULTADO: |';
+       
+  try {
+    const data = fs.readFileSync(arquivos[k], 'utf8');
+    //console.log(data);
+
+    const qtdLinhas = qtdVotantes;
+    const count = qtdLinhas + 1;
+    var linhas = data.split("\r\n", count);
+    opcoesVoto = linhas[0].split(";", qtdOpcoes);
+    qtdVotos = new Array(qtdOpcoes).fill(0);
+    console.log(linhas);
+    //console.log(opcoesVoto);
+    let vote;
+    let j = 0;
+    for(let i = 0 ; i < qtdLinhas ; i++){
+      voteData[i] = linhas[i+1];
+      vote = voteData[i].split(";", 2);
+      for (let j = 0; j < opcoesVoto.length; j++) {
+        if(vote[1] == opcoesVoto[j]){
+          qtdVotos[j] = qtdVotos[j] + 1;
+        }
+      }
+    }
+    console.log(qtdVotos);
+
+   
+    for (let j = 0; j < qtdVotos.length; j++) {
+        resultado = resultado.concat(opcoesVoto[j]).concat(":").concat(qtdVotos[j]).concat("|");
+    } 
+  
+  } catch (err) {
+    console.error(err);
+  }
+  
+  try {
+    const data = fs.readFileSync('src/resumeBlockchain.txt', 'utf8');
+    //console.log(data);
+  
+      //const qtdlinhas = data.match('\r\n');
+      const qtdLinhas = qtdVotantes;
+      const count = qtdLinhas + 2;
+      var linhas = data.split("\r\n", count);
+      //console.log(linhas);
+      let blockData;
+      blockData = linhas[k+2];
+      blockData = blockData.split(";", 6);
+      blockData = blockData[3].split("HASH", 2);
+      resultadoBlockchain = blockData[0];
+  
+  } catch (err) {
+    console.error(err);
+  }
+  
+  let fail = 0;
+      if(resultadoBlockchain == resultado){
+        console.log("Resultado da votação auditado:" + resultado);
+      }else{
+          fail++;
+      }
+
+  
+  if(fail == 0){
+    console.log("Resultado auditado com sucesso!\n");
+  }else{
+    console.log("Este registro foi adulterado.\n")
+  }
+  
+  }
 
 
 
