@@ -6,6 +6,22 @@ const blockNumber = +process.argv[3] || 10
 let chain = blockchain.chain
 
 const fs = require('node:fs');
+const path = require('path');
+
+// LISTA OS ARQUIVOS NO DIRETORIO
+let files = fs.readdirSync('src/');
+
+console.log("Arquivos .csv :");
+files.forEach( (file: any) => {
+  if (path.extname(file) == ".csv")
+    console.log(file);
+})
+
+console.log("Arquivos .txt :");
+files.forEach( (file: any) => {
+  if (path.extname(file) == ".txt")
+    console.log(file);
+})
 
 //BLOCKCHAIN DE VOTOS
 let voteData: string[] = [];
