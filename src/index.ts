@@ -7,21 +7,28 @@ let chain = blockchain.chain
 
 const fs = require('node:fs');
 const path = require('path');
+const pathFile = 'src/files/';
 
 // LISTA OS ARQUIVOS NO DIRETORIO
-let files = fs.readdirSync('src/');
+let files = fs.readdirSync(pathFile);
+let currentFiles: string[] = [];
+let blockchainFiles: string[] = [];
 
 console.log("Arquivos .csv :");
 files.forEach( (file: any) => {
   if (path.extname(file) == ".csv")
-    console.log(file);
+    currentFiles.push(pathFile.concat(file));
 })
+
+console.log(currentFiles);
 
 console.log("Arquivos .txt :");
 files.forEach( (file: any) => {
   if (path.extname(file) == ".txt")
-    console.log(file);
+    blockchainFiles.push(pathFile.concat(file));
 })
+
+console.log(blockchainFiles);
 
 //BLOCKCHAIN DE VOTOS
 let voteData: string[] = [];
@@ -34,26 +41,11 @@ let qtdVotantes = 10;
 const qtdArq = 3;
 let resultados: string[] = [];
 
-const arq1 = 'src/votos.csv';
-const arq2 = 'src/votos2.csv';
-const arq3 = 'src/votos3.csv';
-const arquivos: string[] = [];
-arquivos[0] = arq1;
-arquivos[1] = arq2;
-arquivos[2] = arq3;
-
-const arqSaida1 = 'src/voteBlockchain.txt';
-const arqSaida2 = 'src/voteBlockchain2.txt';
-const arqSaida3 = 'src/voteBlockchain3.txt';
-const arquivoSaida: string[] = [];
-arquivoSaida[0] = arqSaida1;
-arquivoSaida[1] = arqSaida2;
-arquivoSaida[2] = arqSaida3;
 
 for (let k = 0; k < qtdArq; k++) {
   
 try {
-  const data = fs.readFileSync(arquivos[k], 'utf8');
+  const data = fs.readFileSync(currentFiles[k], 'utf8');
   console.log(data);
 
     //const qtdlinhas = data.match('\r\n');
@@ -135,7 +127,10 @@ try {
  
        dataVoteBlockchain = dataBlockchain;
 
-  fs.writeFileSync(arquivoSaida[k], dataVoteBlockchain);
+   let fileName = (currentFiles[k]).split('.');
+   let arquivoSaida = pathFile.concat(fileName[0]).concat('blockchain.txt')  
+  
+  fs.writeFileSync(arquivoSaida, dataVoteBlockchain);
   // file written successfully
 } catch (err) {
   console.error(err);
@@ -146,13 +141,13 @@ try {
 //AUDITORIA DOS ARQUIVOS
 for (let k = 0; k < qtdArq; k++) {
 
-console.log("AUDITORIA DO ARQUIVO:" + arquivos[k]);
+console.log("AUDITORIA DO ARQUIVO:" + currentFiles[k]);
 
 let auditingFile : string[] = [];
 let auditingBlockchain : string[] = [];
      
 try {
-  const data = fs.readFileSync(arquivos[k], 'utf8');
+  const data = fs.readFileSync(currentFiles[k], 'utf8');
   //console.log(data);
 
     //const qtdlinhas = data.match('\r\n');
@@ -170,7 +165,7 @@ try {
 }
 
 try {
-  const data = fs.readFileSync(arquivoSaida[k], 'utf8');
+  const data = fs.readFileSync(blockchainFiles[k], 'utf8');
   //console.log(data);
 
     //const qtdlinhas = data.match('\r\n');
@@ -212,7 +207,7 @@ let resumeChain: string[] = [];
 
 for (let k = 0; k < qtdArq; k++) {
 try {
-  const data = fs.readFileSync(arquivoSaida[k], 'utf8');
+  const data = fs.readFileSync(blockchainFiles[k], 'utf8');
   //console.log(data);
   
     let resumeBlock: string = '';
@@ -290,13 +285,13 @@ try {
 //AUDITORIA DOS RESULTADOS
 for (let k = 0; k < qtdArq; k++) {
 
-  console.log("AUDITORIA DO ARQUIVO:" + arquivos[k]);
+  console.log("AUDITORIA DO ARQUIVO:" + currentFiles[k]);
   
   let resultadoBlockchain;
   let resultado = 'RESULTADO: |';
        
   try {
-    const data = fs.readFileSync(arquivos[k], 'utf8');
+    const data = fs.readFileSync(currentFiles[k], 'utf8');
     //console.log(data);
 
     const qtdLinhas = qtdVotantes;
