@@ -5,15 +5,24 @@ const blockchain = new BlockChain(Number(process.argv[2] || 4))
 const blockNumber = +process.argv[3] || 10
 let chain = blockchain.chain
 
+const LIMITE = blockNumber;
+
 const fs = require('node:fs');
-const path = require('path');
+const path = require ('path');
 const pathFile = 'src/files/';
 
 // LISTA OS ARQUIVOS NO DIRETORIO
 let files = fs.readdirSync(pathFile);
+//arquivos atuais no diretorio
 let currentFiles: string[] = [];
+//blockchains temporarias já geradas
 let blockchainFiles: string[] = [];
+//novos arquivos 
+let newFiles: string[] = [];
+//arquivos prontos para ser resumidos em um bloco
+let filestoResume: string[] = [];
 
+//ARQUIVOS DE VOTAÇÃO
 console.log("Arquivos .csv :");
 files.forEach( (file: any) => {
   if (path.extname(file) == ".csv")
@@ -22,6 +31,7 @@ files.forEach( (file: any) => {
 
 console.log(currentFiles);
 
+//ARQUIVOS DE BLOCKCHAIN TEMPORARIA
 console.log("Arquivos .txt :");
 files.forEach( (file: any) => {
   if (path.extname(file) == ".txt")
@@ -30,35 +40,89 @@ files.forEach( (file: any) => {
 
 console.log(blockchainFiles);
 
-//BLOCKCHAIN DE VOTOS
+//VERIFICANDO QUAIS SAO OS NOVOS ARQUIVOS
+for (let i = 0; i < currentFiles.length; i++) {
+  var currentFile = currentFiles[i].split(".");
+  var exist = 0;
+  for (let j = 0; j < blockchainFiles.length; j++) {
+    var blockchainFile = blockchainFiles[j].split(".");
+    if(currentFile[0] == blockchainFile[0]){
+      exist++;
+    } 
+  }
+  if(exist == 0){
+    newFiles.push(currentFiles[i]);
+  }
+}
+
+//ESCREVENDO NOVOS ARQUIVOS NO CONTROLE
+let dataFiles = '';
+for (let index = 0; index < newFiles.length; index++) {
+  dataFiles = dataFiles.concat(newFiles[index]).concat(";N;").concat("\r\n");
+}
+
+try {
+fs.writeFileSync('src/controle.csv', dataFiles, {flag: 'a+'});
+// file written successfully
+} catch (err) {
+console.error(err);
+}
+
+//LEITURA DO ARQUIVO DE CONTROLE
+
+try {
+  const data = fs.readFileSync('src/controle.csv', 'utf8');
+  
+  var size = data.toString().split('\r\n').length;
+  var linhas = data.split("\r\n", size);
+  for (let index = 0; index < size; index++) {
+    let fileInfo = linhas[0].split(";", 3);
+    let nameFile = fileInfo[0];
+    let addedFile = fileInfo[1];
+      console.log(size);
+      console.log(nameFile);
+      console.log(addedFile);
+    if(addedFile == "N"){
+      if(filestoResume.length < LIMITE){
+        filestoResume.push(nameFile);
+      }     
+    }
+  }
+ 
+} catch (err) {
+  console.error(err);
+}
+
+
+//PROPRIEDADES BLOCKCHAIN DE VOTOS
 let voteData: string[] = [];
 let opcoesVoto;
 let qtdVotos: string[] = [];
-let qtdOpcoes = 3;
-let qtdVotantes = 10;
+let qtdOpcoes;
+var qtdVotantes;
 
 //ARQUIVOS
-const qtdArq = 3;
 let resultados: string[] = [];
 
 
-for (let k = 0; k < qtdArq; k++) {
-  
+//CRIAÇÃO DAS BLOCKCHAINS TEMPORÁRIAS
+for (let k = 0; k < newFiles.length; k++) {
+
 try {
-  const data = fs.readFileSync(currentFiles[k], 'utf8');
+  const data = fs.readFileSync(newFiles[k], 'utf8');
   console.log(data);
 
-    //const qtdlinhas = data.match('\r\n');
-    const qtdLinhas = qtdVotantes;
-    const count = qtdLinhas + 1;
-    var linhas = data.split("\r\n", count);
+    var size = data.toString().split('\r\n').length;
+    var linhas = data.split("\r\n", size);
+    qtdVotantes = size;
+    qtdOpcoes = linhas[0].toString().split('\r\n').length;
     opcoesVoto = linhas[0].split(";", qtdOpcoes);
     qtdVotos = new Array(qtdOpcoes).fill(0);
     console.log(linhas);
     console.log(opcoesVoto);
     let vote;
     let j = 0;
-    for(let i = 0 ; i < qtdLinhas ; i++){
+    for(let i = 0 ; i < qtdVotantes - 1; i++){
       voteData[i] = linhas[i+1];
       vote = voteData[i].split(";", 2);
       for (let j = 0; j < opcoesVoto.length; j++) {
@@ -83,7 +147,7 @@ resultados[k] = resultado;
 const newBlockchain = new BlockChain(Number(4))
 let newChain = newBlockchain.chain
 
-for(let i = 0; i < qtdVotantes; i++) {
+for(let i = 0; i < qtdVotantes - 1; i++) {
   const newblock = newBlockchain.createBlock(voteData[i])
   const mineInfo = newBlockchain.mineBlock(newblock)
   newChain = newBlockchain.pushBlock(mineInfo.minedBlock)
@@ -112,7 +176,7 @@ try {
        let _previousHah :string;
        let line: string = '';
  
-       for (let index = 0; index < qtdVotantes+1; index++) {
+       for (let index = 0; index < qtdVotantes; index++) {
            line = '';
            _nonce = newChain[index].header.nonce.toString();
            _blockHash = newChain[index].header.blockHash;
@@ -127,8 +191,8 @@ try {
  
        dataVoteBlockchain = dataBlockchain;
 
-   let fileName = (currentFiles[k]).split('.');
-   let arquivoSaida = pathFile.concat(fileName[0]).concat('blockchain.txt')  
+   let fileName = newFiles[k].toString().split('.');
+   let arquivoSaida = fileName[0].toString().concat('.txt')  
   
   fs.writeFileSync(arquivoSaida, dataVoteBlockchain);
   // file written successfully
@@ -139,7 +203,7 @@ try {
 }
 
 //AUDITORIA DOS ARQUIVOS
-for (let k = 0; k < qtdArq; k++) {
+for (let k = 0; k < currentFiles.length; k++) {
 
 console.log("AUDITORIA DO ARQUIVO:" + currentFiles[k]);
 
@@ -150,12 +214,10 @@ try {
   const data = fs.readFileSync(currentFiles[k], 'utf8');
   //console.log(data);
 
-    //const qtdlinhas = data.match('\r\n');
-    const qtdLinhas = qtdVotantes;
-    const count = qtdLinhas + 1;
-    var linhas = data.split("\r\n", count);
+    var size = data.toString().split('\r\n').length;
+    var linhas = data.split("\r\n", size);
     //console.log(linhas);
-    for(let i = 0 ; i < qtdLinhas ; i++){
+    for(let i = 0 ; i < size ; i++){
       auditingFile[i] = linhas[i+1].replace(";", ":");;
     }
 
@@ -168,13 +230,11 @@ try {
   const data = fs.readFileSync(blockchainFiles[k], 'utf8');
   //console.log(data);
 
-    //const qtdlinhas = data.match('\r\n');
-    const qtdLinhas = qtdVotantes;
-    const count = qtdLinhas + 2;
-    var linhas = data.split("\r\n", count);
+    var size = data.toString().split('\r\n').length;
+    var linhas = data.split("\r\n", size);
     //console.log(linhas);
     let blockData;
-    for(let i = 0 ; i < qtdLinhas ; i++){
+    for(let i = 0 ; i < size ; i++){
       blockData = linhas[i+2]
       blockData = blockData.split(";", 6);
       auditingBlockchain[i] = blockData[3];
@@ -185,7 +245,7 @@ try {
 }
 
 let fail = 0;
-for (let index = 0; index < qtdVotantes; index++) {
+for (let index = 0; index < qtdVotantes - 1; index++) {
     if(auditingBlockchain[index] == auditingFile[index]){
       console.log("Voto auditado:" + auditingFile[index]);
     }else{
@@ -205,26 +265,25 @@ if(fail == 0){
 //BLOCKCHAIN RESUMO
 let resumeChain: string[] = [];
 
-for (let k = 0; k < qtdArq; k++) {
+for (let k = 0; k < LIMITE; k++) {
 try {
   const data = fs.readFileSync(blockchainFiles[k], 'utf8');
   //console.log(data);
   
     let resumeBlock: string = '';
     //const qtdlinhas = data.match('\r\n');
-    const qtdlinhas = qtdVotantes;
-    const count = qtdlinhas + 1;
-    var linhas = data.split("\r\n", count);
+    var size = data.toString().split('\r\n').length;
+    var linhas = data.split("\r\n", size);
     const genesisblock:string = linhas[1];
     //console.log(linhas);
     let hashLinha;
     let hashResume = '';
 
-    for(let i = 1 ; i < count ; i++){
+    for(let i = 1 ; i < size ; i++){
       resumeBlock = '';
       resumeBlock = resumeBlock.concat(linhas[i].toString());
       resumeBlock = resumeBlock.concat("\r\n");
-      hashLinha = linhas[i].split(";", count);
+      hashLinha = linhas[i].split(";", size);
       hashResume = hashResume.concat(hashLinha[1]);
       //console.log(hashResume);
       console.log("\n");
@@ -283,7 +342,7 @@ try {
 }
 
 //AUDITORIA DOS RESULTADOS
-for (let k = 0; k < qtdArq; k++) {
+for (let k = 0; k < currentFiles.length; k++) {
 
   console.log("AUDITORIA DO ARQUIVO:" + currentFiles[k]);
   
@@ -294,16 +353,16 @@ for (let k = 0; k < qtdArq; k++) {
     const data = fs.readFileSync(currentFiles[k], 'utf8');
     //console.log(data);
 
-    const qtdLinhas = qtdVotantes;
-    const count = qtdLinhas + 1;
-    var linhas = data.split("\r\n", count);
+    var size = data.toString().split('\r\n').length;
+    var linhas = data.split("\r\n", size);
+    qtdOpcoes = linhas[0].toString().split('\r\n').length;
     opcoesVoto = linhas[0].split(";", qtdOpcoes);
     qtdVotos = new Array(qtdOpcoes).fill(0);
     console.log(linhas);
     //console.log(opcoesVoto);
     let vote;
     let j = 0;
-    for(let i = 0 ; i < qtdLinhas ; i++){
+    for(let i = 0 ; i < size - 1 ; i++){
       voteData[i] = linhas[i+1];
       vote = voteData[i].split(";", 2);
       for (let j = 0; j < opcoesVoto.length; j++) {
@@ -328,9 +387,8 @@ for (let k = 0; k < qtdArq; k++) {
     //console.log(data);
   
       //const qtdlinhas = data.match('\r\n');
-      const qtdLinhas = qtdVotantes;
-      const count = qtdLinhas + 2;
-      var linhas = data.split("\r\n", count);
+      var size = data.toString().split('\r\n').length;
+      var linhas = data.split("\r\n", size);
       //console.log(linhas);
       let blockData;
       blockData = linhas[k+2];
