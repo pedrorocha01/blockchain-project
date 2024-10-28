@@ -68,7 +68,6 @@ for (let index = 0; index < newFiles.length; index++) {
 
 try {
 fs.writeFileSync('src/controle.csv', dataFiles, {flag: 'a+'});
-// file written successfully
 } catch (err) {
 console.error(err);
 }
@@ -175,7 +174,7 @@ for(let i = 0; i < qtdVotantes - 1; i++) {
 //console.log(newChain)
 
 try {
-  fs.writeFileSync(newFiles[k], "\n".concat(resultados[k]), {flag: 'a+'});  
+  fs.writeFileSync(newFiles[k], "\r\n".concat(resultados[k]), {flag: 'a+'});  
 } catch (err) {
    console.error(err);
 }
@@ -301,16 +300,16 @@ try {
     var size = data.toString().split('\r\n').length;
     currentSize = size-2;
 
-    if(size.length > 2){
+    if(size > 3){
       var linhas = data.split("\r\n", size);
       //const genesisblock:string = linhas[1];
   
-      for(let i = 2 ; i < size - 1 ; i++){
+      for(let i = 2 ; i < size; i++){
         let content = linhas[i].split(";", 6);
         dataResume[i-2] = content[3];
       }   
   
-      for(let i = 0; i < size-1; i++) {
+      for(let i = 0; i < currentSize; i++) {
         const block = blockchain.createBlock(dataResume[i])
         const mineInfo = blockchain.mineBlock(block)
         chain = blockchain.pushBlock(mineInfo.minedBlock)
@@ -328,29 +327,18 @@ let newBlocks: string[] = [];
 let resumeResult = '';
 let currentLIMITE = LIMITE;
 
-for (let k = 0; k < newBlockchainFiles.length; k++) {
+for (let k = 0; k < newFiles.length; k++) {
 try {
-  const data = fs.readFileSync(newBlockchainFiles[k], 'utf8');
+  const data = fs.readFileSync(newFiles[k], 'utf8');
   
     let resumeBlock: string = '';
     var size = data.toString().split('\r\n').length;
     var linhas = data.split("\r\n", size);
-    //const genesisblock:string = linhas[1];
-    let hashLinha;
     let hashResume = '';
-
-    for(let i = 1 ; i < size - 2 ; i++){
-      resumeBlock = '';
-      resumeBlock = resumeBlock.concat(linhas[i].toString());
-      resumeBlock = resumeBlock.concat("\r\n");
-      hashLinha = linhas[i].split(";", size);
-      hashResume = hashResume.concat(hashLinha[1]);
-      console.log("\n");
-    }
-    hashResume = hash(hashResume);
-    resumeChain[k] = filestoResume[k].concat(resultados[k].concat("HASH DA BLOCKCHAIN:").concat(hashResume));
+    hashResume = hash(data);
+    let strResultado = "_".concat(resultados[k]);
+    resumeChain[k] = "_ARQUIVO:_".concat(filestoResume[k].concat(strResultado.concat("_HASH DO ARQUIVO:_").concat(hashResume)));
     resumeResult = resumeResult.concat(resumeChain[k]);
-
     
     if(k == currentLIMITE - 1){{
         newBlocks.push(resumeResult);
@@ -361,7 +349,6 @@ try {
 } catch (err) {
   console.error(err);
 }
-
 
 }
  
@@ -386,7 +373,7 @@ try {
  //PAYLOAD
  let _sequence : string;
  let _timestamp : string;
- let _data : any;
+ let _data : string;
  let _previousHah :string;
  let line: string = '';
 
@@ -397,7 +384,7 @@ try {
     _blockHash = chain[index].header.blockHash;
     _sequence = chain[index].payload.sequence.toString();
     _timestamp = chain[index].payload.timestamp.toString();
-    _data = chain[index].payload.data;
+    _data = chain[index].payload.data.toString();
     _previousHah = chain[index].payload.previousHash;
     line = line.concat(_sequence, ";", _blockHash, ";", _previousHah, ";", _data, ";", _nonce, ";", _timestamp)
     dataBlockchain = dataBlockchain.concat(line, "\r\n");
@@ -424,71 +411,80 @@ fs.writeFileSync('src/auditados.csv', dataFiles, {flag: 'a+'});
 console.error(err);
 }
 
-//AUDITORIA DOS RESULTADOS
-for (let k = 0; k < currentFiles.length; k++) {
+// ARRAY DE ARQUIVOS NA ORDEM QUE FORAM ADICIONDOS AO BLOCO
+let auditingFiles: string[] = [];
 
-  console.log("AUDITORIA DO ARQUIVO:" + currentFiles[k]);
-  
-  let resultadoBlockchain;
-  let resultado = 'RESULTADO:|';
-       
-  try {
-    const data = fs.readFileSync(currentFiles[k], 'utf8');
-    //console.log(data);
-
+try {
+  let data = fs.readFileSync('src/auditados.csv', 'utf8');
     var size = data.toString().split('\r\n').length;
     var linhas = data.split("\r\n", size);
-    qtdOpcoes = linhas[0].toString().split('\r\n').length;
-    opcoesVoto = linhas[0].split(";", qtdOpcoes);
-    qtdVotos = new Array(qtdOpcoes).fill(0);
-    //console.log(linhas);
-    //console.log(opcoesVoto);
-    let vote;
-    let j = 0;
-    for(let i = 0 ; i < size - 2 ; i++){
-      voteData[i] = linhas[i+1];
-      vote = voteData[i].split(";", 2);
-      for (let j = 0; j < opcoesVoto.length; j++) {
-        if(vote[1] == opcoesVoto[j]){
-          qtdVotos[j] = qtdVotos[j] + 1;
-        }
-      }
-    }
-    //console.log(qtdVotos);
 
-   
-    for (let j = 0; j < qtdVotos.length; j++) {
-        resultado = resultado.concat(opcoesVoto[j]).concat(":").concat(qtdVotos[j]).concat("|");
-    } 
-  
+    for (let index = 0; index < size - 1; index++) {
+      auditingFiles.push(linhas[index]);
+    }
+
   } catch (err) {
-    console.error(err);
+  console.error(err);
   }
+
+
+
+//AUDITORIA DOS RESULTADOS
+for (let k = 0; k < auditingFiles.length; k++) {
+
+  let fail = 0;
+  console.log("AUDITORIA DO ARQUIVO:" + auditingFiles[k]);
+  
+  let arquivos;
+  let resultadoBlockchain: string[] = [];
+  let hashArquivo: string[] = [];
+  let arquivoAtual: string[] = [];
   
   try {
-    const data = fs.readFileSync('src/resumeBlockchain.txt', 'utf8');
-    //console.log(data);
-  
-      //const qtdlinhas = data.match('\r\n');
+    let data = fs.readFileSync('src/resumeBlockchain.txt', 'utf8');
+
       var size = data.toString().split('\r\n').length;
       var linhas = data.split("\r\n", size);
       //console.log(linhas);
       let blockData;
       blockData = linhas[k+2];
       blockData = blockData.split(";", 6);
-      blockData = blockData[3].split("HASH", 2);
-      resultadoBlockchain = blockData[0];
+      let qtdArquivos = blockData[3].toString().split('_ARQUIVO:_').length;
+      arquivos = blockData[3].split('_ARQUIVO:_', qtdArquivos);
+          
+
+      for (let index = 0; index < arquivos.length; index++) {
+        let arq = arquivos[index].split('_',3);
+        arquivoAtual.push(arq[1]);
+        resultadoBlockchain.push(arq[2]);
+        hashArquivo.push(arq[4]);
+      }
   
   } catch (err) {
     console.error(err);
   }
+
+  try {
+    let data = fs.readFileSync(auditingFiles[k], 'utf8');
+
+    var size = data.toString().split('\r\n').length;
+    var linhas = data.split("\r\n", size);
+
+    if(linhas[size - 1] == resultadoBlockchain[k]){
+      console.log("Resultado da votação auditado:" + resultadoBlockchain[k]);
+    }else{
+        fail++;
+    }
+
+    if(hash(data) == hashArquivo[k]){
+      console.log("Resultado da votação auditado:" + resultadoBlockchain[k]);
+    }else{
+        fail++;
+    }
   
-  let fail = 0;
-      if(resultadoBlockchain == resultado){
-        console.log("Resultado da votação auditado:" + resultado);
-      }else{
-          fail++;
-      }
+  } catch (err) {
+    console.error(err);
+  }
 
   
   if(fail == 0){
@@ -498,15 +494,3 @@ for (let k = 0; k < currentFiles.length; k++) {
   }
   
   }
-
-
-
-
-
-
-
-
-
-
-
-
