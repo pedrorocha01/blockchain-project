@@ -304,12 +304,12 @@ try {
       var linhas = data.split("\r\n", size);
       //const genesisblock:string = linhas[1];
   
-      for(let i = 2 ; i < size; i++){
+      for(let i = 2 ; i < size - 1; i++){
         let content = linhas[i].split(";", 6);
         dataResume[i-2] = content[3];
       }   
   
-      for(let i = 0; i < currentSize; i++) {
+      for(let i = 0; i < currentSize - 1; i++) {
         const block = blockchain.createBlock(dataResume[i])
         const mineInfo = blockchain.mineBlock(block)
         chain = blockchain.pushBlock(mineInfo.minedBlock)
@@ -428,18 +428,13 @@ try {
   }
 
 
-
 //AUDITORIA DOS RESULTADOS
-for (let k = 0; k < auditingFiles.length; k++) {
 
-  let fail = 0;
-  console.log("AUDITORIA DO ARQUIVO:" + auditingFiles[k]);
-  
   let arquivos;
   let resultadoBlockchain: string[] = [];
   let hashArquivo: string[] = [];
   let arquivoAtual: string[] = [];
-  
+
   try {
     let data = fs.readFileSync('src/resumeBlockchain.txt', 'utf8');
 
@@ -447,22 +442,31 @@ for (let k = 0; k < auditingFiles.length; k++) {
       var linhas = data.split("\r\n", size);
       //console.log(linhas);
       let blockData;
+
+      for (let k = 0; k < linhas.length; k++) { 
       blockData = linhas[k+2];
       blockData = blockData.split(";", 6);
       let qtdArquivos = blockData[3].toString().split('_ARQUIVO:_').length;
       arquivos = blockData[3].split('_ARQUIVO:_', qtdArquivos);
           
 
-      for (let index = 0; index < arquivos.length; index++) {
+      for (let index = 1; index < arquivos.length; index++) {
         let arq = arquivos[index].split('_',3);
         arquivoAtual.push(arq[1]);
         resultadoBlockchain.push(arq[2]);
         hashArquivo.push(arq[4]);
       }
+
+    }
   
   } catch (err) {
     console.error(err);
   }
+
+for (let k = 0; k < auditingFiles.length; k++) {
+
+  let fail = 0;
+  console.log("AUDITORIA DO ARQUIVO:" + auditingFiles[k]);
 
   try {
     let data = fs.readFileSync(auditingFiles[k], 'utf8');
