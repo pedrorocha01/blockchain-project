@@ -27,23 +27,17 @@ let filestoResume: string[] = [];
 //arquivos que serão resumidos no próximo processamento
 let nextFilestoResume: string[] = [];
 
-//ARQUIVOS DE VOTAÇÃO
-console.log("Arquivos .csv :");
+//ARQUIVOS DE VOTAÇÃO .csv
 files.forEach( (file: any) => {
   if (path.extname(file) == ".csv")
     currentFiles.push(pathFile.concat(file));
 })
 
-console.log(currentFiles);
-
-//ARQUIVOS DE BLOCKCHAIN TEMPORARIA
-console.log("Arquivos .txt :");
+//ARQUIVOS DE BLOCKCHAIN TEMPORARIA .txt
 files.forEach( (file: any) => {
   if (path.extname(file) == ".txt")
     blockchainFiles.push(pathFile.concat(file));
 })
-
-console.log(blockchainFiles);
 
 //VERIFICANDO QUAIS SAO OS NOVOS ARQUIVOS
 for (let i = 0; i < currentFiles.length; i++) {
@@ -80,19 +74,22 @@ try {
   var size = data.toString().split('\r\n').length;
   var linhas = data.split("\r\n", size);
 
-  let resto = (size-1) % LIMITE;
-  if(resto == 0){
-    qtdBlocos = (size -1)/LIMITE;
+  if((size-1) < LIMITE){
+    qtdBlocos = 0;
   }else{
-    qtdBlocos = Math.floor(size/LIMITE);
+    qtdBlocos = Math.floor((size - 1)/LIMITE);
   }
 
   for (let index = 0; index < size - 1; index++) {
-    if(index <= (LIMITE * qtdBlocos)){
-      filestoResume.push(linhas[index]);
-    }else if(index > (LIMITE * qtdBlocos)){
+    if(qtdBlocos == 0){
       nextFilestoResume.push(linhas[index]);
-    }
+    }else{
+      if(index <= (LIMITE * qtdBlocos)){
+        filestoResume.push(linhas[index]);
+      }else if(index > (LIMITE * qtdBlocos)){
+        nextFilestoResume.push(linhas[index]);
+      }
+    }    
   }
  
 } catch (err) {
@@ -127,7 +124,6 @@ for (let k = 0; k < newFiles.length; k++) {
 
 try {
   const data = fs.readFileSync(newFiles[k], 'utf8');
-  //console.log(data);
 
     var size = data.toString().split('\r\n').length;
     var linhas = data.split("\r\n", size);
@@ -135,8 +131,7 @@ try {
     qtdOpcoes = linhas[0].toString().split(';').length;
     opcoesVoto = linhas[0].split(";", qtdOpcoes);
     qtdVotos = new Array(qtdOpcoes).fill(0);
-    //console.log(linhas);
-    //console.log(opcoesVoto);
+
     let vote;
     let j = 0;
     for(let i = 0 ; i < qtdVotantes - 1; i++){
@@ -170,8 +165,6 @@ for(let i = 0; i < qtdVotantes - 1; i++) {
   newChain = newBlockchain.pushBlock(mineInfo.minedBlock)
 }
 
-//console.log('--- GENERATED CHAIN ---\n')
-//console.log(newChain)
 
 try {
   fs.writeFileSync(newFiles[k], "\r\n".concat(resultados[k]), {flag: 'a+'});  
@@ -238,11 +231,9 @@ let auditingBlockchain : string[] = [];
      
 try {
   const data = fs.readFileSync(newFiles[k], 'utf8');
-  //console.log(data);
 
     var size = data.toString().split('\r\n').length;
     var linhas = data.split("\r\n", size);
-    //console.log(linhas);
     for(let i = 0 ; i < size - 1 ; i++){
       auditingFile[i] = linhas[i+1].replace(";", ":");;
     }
@@ -254,11 +245,9 @@ try {
 
 try {
   const data = fs.readFileSync(newBlockchainFiles[k], 'utf8');
-  //console.log(data);
 
     var size = data.toString().split('\r\n').length;
     var linhas = data.split("\r\n", size);
-    //console.log(linhas);
     let blockData;
     for(let i = 0 ; i < size - 3; i++){
       blockData = linhas[i+2]
@@ -321,23 +310,24 @@ try {
 }
 
 
-//GERANDO BLOCKCHAIN RESUMO DOS NOVOS ARQUIVOS
+//GERANDO BLOCKCHAIN RESUMO DOS NOVOS ARQUIVOS 
+// E TAMBEM DE ARQUIVOS NA ESPERA CASO EXISTAM
 let resumeChain: string[] = [];
 let newBlocks: string[] = [];
 let resumeResult = '';
 let currentLIMITE = LIMITE;
 
-for (let k = 0; k < newFiles.length; k++) {
+for (let k = 0; k < filestoResume.length; k++) {
 try {
-  const data = fs.readFileSync(newFiles[k], 'utf8');
+  const data = fs.readFileSync(filestoResume[k], 'utf8');
   
     let resumeBlock: string = '';
     var size = data.toString().split('\r\n').length;
     var linhas = data.split("\r\n", size);
     let hashResume = '';
     hashResume = hash(data);
-    let strResultado = "_".concat(resultados[k]);
-    resumeChain[k] = "_ARQUIVO:_".concat(filestoResume[k].concat(strResultado.concat("_HASH DO ARQUIVO:_").concat(hashResume)));
+    let strResultado = "_".concat(resultados[k]).concat("_");
+    resumeChain[k] = "_ARQUIVO:_".concat(filestoResume[k].concat(strResultado.concat(hashResume)));
     resumeResult = resumeResult.concat(resumeChain[k]);
     
     if(k == currentLIMITE - 1){{
@@ -398,7 +388,7 @@ try {
   console.error(err);
 }
 
-//ESCREVENDO ARQUIVOS JA AUDITADOS NO REGISTRO DE CONTROLE
+//ESCREVENDO ARQUIVOS JA AUDITADOS NO REGISTRO
 dataFiles = '';
 for (let index = 0; index < filestoResume.length; index++) {
   dataFiles = dataFiles.concat(filestoResume[index]).concat("\r\n");
@@ -443,18 +433,18 @@ try {
       //console.log(linhas);
       let blockData;
 
-      for (let k = 0; k < linhas.length; k++) { 
-      blockData = linhas[k+2];
+      for (let k = 2; k < linhas.length - 1; k++) { 
+      blockData = linhas[k];
       blockData = blockData.split(";", 6);
       let qtdArquivos = blockData[3].toString().split('_ARQUIVO:_').length;
       arquivos = blockData[3].split('_ARQUIVO:_', qtdArquivos);
           
 
       for (let index = 1; index < arquivos.length; index++) {
-        let arq = arquivos[index].split('_',3);
-        arquivoAtual.push(arq[1]);
-        resultadoBlockchain.push(arq[2]);
-        hashArquivo.push(arq[4]);
+        let arq = arquivos[index].split("_", 4);
+        arquivoAtual.push(arq[0]);
+        resultadoBlockchain.push(arq[1]);
+        hashArquivo.push(arq[2]);
       }
 
     }
@@ -481,7 +471,7 @@ for (let k = 0; k < auditingFiles.length; k++) {
     }
 
     if(hash(data) == hashArquivo[k]){
-      console.log("Resultado da votação auditado:" + resultadoBlockchain[k]);
+      console.log("Hash do arquivo de votação auditado:" + hashArquivo[k]);
     }else{
         fail++;
     }
