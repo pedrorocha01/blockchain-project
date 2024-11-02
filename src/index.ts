@@ -84,9 +84,9 @@ try {
     if(qtdBlocos == 0){
       nextFilestoResume.push(linhas[index]);
     }else{
-      if(index <= (LIMITE * qtdBlocos)){
+      if(index < (LIMITE * qtdBlocos)){
         filestoResume.push(linhas[index]);
-      }else if(index > (LIMITE * qtdBlocos)){
+      }else if(index >= (LIMITE * qtdBlocos)){
         nextFilestoResume.push(linhas[index]);
       }
     }    
@@ -326,7 +326,7 @@ try {
     var linhas = data.split("\r\n", size);
     let hashResume = '';
     hashResume = hash(data);
-    let strResultado = "_".concat(resultados[k]).concat("_");
+    let strResultado = "_".concat(linhas[size-1]).concat("_");
     resumeChain[k] = "_ARQUIVO:_".concat(filestoResume[k].concat(strResultado.concat(hashResume)));
     resumeResult = resumeResult.concat(resumeChain[k]);
     
