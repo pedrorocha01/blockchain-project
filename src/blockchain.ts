@@ -1,4 +1,4 @@
-import { hash, isHashProofed } from './helpers'
+import { hash, isHashProofed } from './hashFunctions'
 
 export interface Block {
   header: {
@@ -17,8 +17,12 @@ export class BlockChain {
   #chain: Block[] = []
   private powPrefix = '0'
 
-  constructor (private readonly difficulty: number = 4) {
-    this.#chain.push(this.createGenesisBlock())
+  constructor (private readonly difficulty: number = 4, private mode: string, private previousHashLastBlock: string, private lastSequence: number) {
+    if(mode == "new"){
+       this.#chain.push(this.createGenesisBlock())
+    }else{
+      this.#chain.push(this.createLinkLastBlock(previousHashLastBlock, lastSequence))
+    }
   }
 
   private createGenesisBlock () {
@@ -38,6 +42,24 @@ export class BlockChain {
       payload
     }
   }
+
+  private createLinkLastBlock (previousHashLastBlock: string, lastSequence: number) {
+
+    const payload = {
+      sequence: lastSequence,
+      timestamp: 0,
+      data: '',
+      previousHash: ''
+    }
+    return {
+      header: {
+        nonce:0,
+        blockHash: previousHashLastBlock
+      },
+      payload
+    }
+  }
+
 
   private get lastBlock (): Block {
     return this.#chain.at(-1) as Block

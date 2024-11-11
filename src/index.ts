@@ -1,12 +1,5 @@
 import { BlockChain } from './blockchain'
-import { hash} from './helpers'
-
-const blockchain = new BlockChain(Number(process.argv[2] || 4))
-const blockNumber = +process.argv[3] || 3
-let chain = blockchain.chain
-
-const LIMITE = blockNumber;
-var qtdBlocos: number = 0;
+import { hash} from './hashFunctions'
 
 const fs = require('node:fs');
 const path = require ('path');
@@ -22,10 +15,6 @@ let blockchainFiles: string[] = [];
 let newFiles: string[] = [];
 //blockchains temporarias já geradas
 let newBlockchainFiles: string[] = [];
-//arquivos prontos para ser resumidos em um bloco
-let filestoResume: string[] = [];
-//arquivos que serão resumidos no próximo processamento
-let nextFilestoResume: string[] = [];
 
 //ARQUIVOS DE VOTAÇÃO .csv
 files.forEach( (file: any) => {
@@ -53,63 +42,9 @@ for (let i = 0; i < currentFiles.length; i++) {
     newFiles.push(currentFiles[i]);
   }
 }
-
-//ESCREVENDO NOVOS ARQUIVOS NO CONTROLE
-let dataFiles = '';
-for (let index = 0; index < newFiles.length; index++) {
-  dataFiles = dataFiles.concat(newFiles[index]).concat("\r\n");
-}
-
-try {
-fs.writeFileSync('src/controle.csv', dataFiles, {flag: 'a+'});
-} catch (err) {
-console.error(err);
-}
-
-//LEITURA DO ARQUIVO DE CONTROLE DE BLOCO
-// verificar se existe a quantidade suficiente para gerar um bloco
-try {
-  const data = fs.readFileSync('src/controle.csv', 'utf8');
   
-  var size = data.toString().split('\r\n').length;
-  var linhas = data.split("\r\n", size);
-
-  if((size-1) < LIMITE){
-    qtdBlocos = 0;
-  }else{
-    qtdBlocos = Math.floor((size - 1)/LIMITE);
-  }
-
-  for (let index = 0; index < size - 1; index++) {
-    if(qtdBlocos == 0){
-      nextFilestoResume.push(linhas[index]);
-    }else{
-      if(index < (LIMITE * qtdBlocos)){
-        filestoResume.push(linhas[index]);
-      }else if(index >= (LIMITE * qtdBlocos)){
-        nextFilestoResume.push(linhas[index]);
-      }
-    }    
-  }
- 
-} catch (err) {
-  console.error(err);
-}
-
-//ESCREVENDO ARQUIVOS RESTANTES NO CONTROLE
-dataFiles = '';
-for (let index = 0; index < nextFilestoResume.length; index++) {
-  dataFiles = dataFiles.concat(nextFilestoResume[index]).concat("\r\n");
-}
-
-try {
-fs.writeFileSync('src/controle.csv', dataFiles);
-// file written successfully
-} catch (err) {
-console.error(err);
-}
-
-
+// VARIAVEL DE CONTROLE DE CRIAÇÃO DE BLOKCHAIN
+var MODE = "new";
 //PROPRIEDADES BLOCKCHAIN DE VOTOS
 let voteData: string[] = [];
 let opcoesVoto;
@@ -117,7 +52,6 @@ let qtdVotos: string[] = [];
 let qtdOpcoes;
 var qtdVotantes;
 let resultados: string[] = [];
-
 
 //CRIAÇÃO DAS BLOCKCHAINS TEMPORÁRIAS
 for (let k = 0; k < newFiles.length; k++) {
@@ -156,7 +90,8 @@ for (let j = 0; j < qtdVotos.length; j++) {
 }
 resultados[k] = resultado;
 
-const newBlockchain = new BlockChain(Number(4))
+// CRIANDO BLOCKCHAIN TEMPORÁRIA
+const newBlockchain = new BlockChain(Number(4), MODE, '', 0)
 let newChain = newBlockchain.chain
 
 for(let i = 0; i < qtdVotantes - 1; i++) {
@@ -180,8 +115,6 @@ try {
        //escrevendo blockchain saída
        let dataBlockchain : string = '';
        let title: string = 'Number;BlockHash;Previous_BlockHash;Content_Hash;Nonce;TimeStamp';
-       //let genesis : string = '0;0000000000000000000000000000000000000000000000000000000000000000;0000000000000000000000000000000000000000000000000000000000000000;0000000000000000000000000000000000000000000000000000000000000000;0;00/00/0000 00:00:00';
-       //dataBlockchain = dataBlockchain.concat(title, "\r\n", genesis, "\r\n");
        dataBlockchain = dataBlockchain.concat(title, "\r\n");
        //HEADER
        let _nonce : string;
@@ -206,12 +139,12 @@ try {
            dataBlockchain = dataBlockchain.concat(line, "\r\n");
        }
  
-       dataVoteBlockchain = dataBlockchain;
+      dataVoteBlockchain = dataBlockchain;
 
-   let fileName = newFiles[k].toString().split('.', 2);
-   let arquivoSaida = fileName[0].toString().concat('.txt');
+      let fileName = newFiles[k].toString().split('.', 2);
+      let arquivoSaida = fileName[0].toString().concat('.txt');
 
-   newBlockchainFiles.push(arquivoSaida);
+      newBlockchainFiles.push(arquivoSaida);
   
   fs.writeFileSync(arquivoSaida, dataVoteBlockchain);
   // file written successfully
@@ -274,34 +207,32 @@ if(fail == 0){
   console.log(fail + " votos foram adulterados.\n")
 }
 
-
-
 }
 
 //LENDO BLOCKCHAIN RESUMO EXISTENTE
 
-let dataResume: string[] = [];
-let currentSize: number = 0;
+let dataResume: string = '';
+let sizeBlockMain: number = 0;
+let contentLastBlock: string = 'empty';
+let lastSequence: number = 0;
 
 try {
   const data = fs.readFileSync('src/resumeBlockchain.txt', 'utf8');
   
     var size = data.toString().split('\r\n').length;
-    currentSize = size-2;
+    sizeBlockMain = size - 3;
+    let content;
 
     if(size > 3){
-      var linhas = data.split("\r\n", size);
-      //const genesisblock:string = linhas[1];
-  
-      for(let i = 2 ; i < size - 1; i++){
-        let content = linhas[i].split(";", 6);
-        dataResume[i-2] = content[3];
-      }   
-  
-      for(let i = 0; i < currentSize - 1; i++) {
-        const block = blockchain.createBlock(dataResume[i])
-        const mineInfo = blockchain.mineBlock(block)
-        chain = blockchain.pushBlock(mineInfo.minedBlock)
+      var linhas = data.split("\r\n", size);     
+      for(let i = 0 ; i < size - 1; i++){        
+        dataResume = dataResume.concat(linhas[i]).concat("\r\n");
+        if(i == size - 2){
+          // ultimo previousHash existente
+          content = linhas[i].split(";", 6);
+          contentLastBlock = content[1];
+          lastSequence = Number(content[0]);
+        }
       }
     }
     
@@ -309,32 +240,28 @@ try {
   console.error(err);
 }
 
+// DEFININDO MODO DE CRIAÇÃO DE BLOCKCHAIN PRINCIPAL
+if(contentLastBlock != 'empty'){
+  MODE = 'add';
+}
+const blockchain = new BlockChain(Number(4), MODE, contentLastBlock, lastSequence)
+const blockNumber = +process.argv[3] || 1
+let chain = blockchain.chain
+
 
 //GERANDO BLOCKCHAIN RESUMO DOS NOVOS ARQUIVOS 
-// E TAMBEM DE ARQUIVOS NA ESPERA CASO EXISTAM
 let resumeChain: string[] = [];
-let newBlocks: string[] = [];
-let resumeResult = '';
-let currentLIMITE = LIMITE;
 
-for (let k = 0; k < filestoResume.length; k++) {
+for (let k = 0; k < newFiles.length; k++) {
 try {
-  const data = fs.readFileSync(filestoResume[k], 'utf8');
+  const data = fs.readFileSync(newFiles[k], 'utf8');
   
-    let resumeBlock: string = '';
     var size = data.toString().split('\r\n').length;
     var linhas = data.split("\r\n", size);
     let hashResume = '';
     hashResume = hash(data);
     let strResultado = "_".concat(linhas[size-1]).concat("_");
-    resumeChain[k] = "_ARQUIVO:_".concat(filestoResume[k].concat(strResultado.concat(hashResume)));
-    resumeResult = resumeResult.concat(resumeChain[k]);
-    
-    if(k == currentLIMITE - 1){{
-        newBlocks.push(resumeResult);
-        resumeResult = '';
-        currentLIMITE = currentLIMITE + LIMITE;
-    }}
+    resumeChain[k] = "_ARQUIVO:_".concat(newFiles[k].concat(strResultado.concat(hashResume)));
 
 } catch (err) {
   console.error(err);
@@ -342,19 +269,23 @@ try {
 
 }
  
-  for(let i = 0; i < qtdBlocos ; i++) {
-    const block = blockchain.createBlock(newBlocks[i])
-    const mineInfo = blockchain.mineBlock(block)
-    chain = blockchain.pushBlock(mineInfo.minedBlock)
-  }
+for(let i = 0; i < resumeChain.length ; i++) {
+  const block = blockchain.createBlock(resumeChain[i])
+  const mineInfo = blockchain.mineBlock(block)
+  chain = blockchain.pushBlock(mineInfo.minedBlock)
+}
 
-  //console.log(chain)
-
- //ESCREVENDO BLOCKCHAIN SAÍDA
- let dataBlockchain : string = '';
- let title: string = 'Number;BlockHash;Previous_BlockHash;Content_Hash;Nonce;TimeStamp';
- //let genesis : string = '0;0000000000000000000000000000000000000000000000000000000000000000;0000000000000000000000000000000000000000000000000000000000000000;0000000000000000000000000000000000000000000000000000000000000000;0;00/00/0000 00:00:00';
- dataBlockchain = dataBlockchain.concat(title, "\r\n");
+//ESCREVENDO BLOCKCHAIN SAÍDA
+let dataBlockchain : string = '';
+let inicio: number = 1;
+let title: string = 'Number;BlockHash;Previous_BlockHash;Content_Hash;Nonce;TimeStamp';
+//let genesis : string = '0;0000000000000000000000000000000000000000000000000000000000000000;0000000000000000000000000000000000000000000000000000000000000000;0000000000000000000000000000000000000000000000000000000000000000;0;00/00/0000 00:00:00';
+if(contentLastBlock == 'empty'){
+  inicio = 0;
+  dataBlockchain = dataBlockchain.concat(title, "\r\n");
+}else{
+  dataBlockchain = dataBlockchain.concat(dataResume);
+}
 
  //HEADER
  let _nonce : string;
@@ -368,11 +299,15 @@ try {
  let line: string = '';
 
  if(chain.length != 0){
- for (let index = 0; index < qtdBlocos + currentSize; index++) {
+ for (let index = inicio; index < newFiles.length + 1; index++) {
     line = '';
     _nonce = chain[index].header.nonce.toString();
     _blockHash = chain[index].header.blockHash;
     _sequence = chain[index].payload.sequence.toString();
+    if(MODE == 'add' && _sequence == '1'){
+      _sequence = (Number(_sequence) + sizeBlockMain).toString();
+      sizeBlockMain = Number(_sequence);
+    }
     _timestamp = chain[index].payload.timestamp.toString();
     _data = chain[index].payload.data.toString();
     _previousHah = chain[index].payload.previousHash;
@@ -388,10 +323,10 @@ try {
   console.error(err);
 }
 
-//ESCREVENDO ARQUIVOS JA AUDITADOS NO REGISTRO
-dataFiles = '';
-for (let index = 0; index < filestoResume.length; index++) {
-  dataFiles = dataFiles.concat(filestoResume[index]).concat("\r\n");
+//ESCREVENDO ARQUIVOS JA AUDITADOS NO CONTROLE
+let dataFiles = '';
+for (let index = 0; index < newFiles.length; index++) {
+  dataFiles = dataFiles.concat(newFiles[index]).concat("\r\n");
 }
 
 try {
@@ -430,22 +365,17 @@ try {
 
       var size = data.toString().split('\r\n').length;
       var linhas = data.split("\r\n", size);
-      //console.log(linhas);
       let blockData;
 
       for (let k = 2; k < linhas.length - 1; k++) { 
       blockData = linhas[k];
       blockData = blockData.split(";", 6);
-      let qtdArquivos = blockData[3].toString().split('_ARQUIVO:_').length;
-      arquivos = blockData[3].split('_ARQUIVO:_', qtdArquivos);
+      let qtdArquivos = blockData[3].toString().split('_').length;
+      arquivos = blockData[3].split('_', qtdArquivos);
           
-
-      for (let index = 1; index < arquivos.length; index++) {
-        let arq = arquivos[index].split("_", 4);
-        arquivoAtual.push(arq[0]);
-        resultadoBlockchain.push(arq[1]);
-        hashArquivo.push(arq[2]);
-      }
+      arquivoAtual.push(arquivos[2]);
+      resultadoBlockchain.push(arquivos[3]);
+      hashArquivo.push(arquivos[4]);
 
     }
   
@@ -487,4 +417,6 @@ for (let k = 0; k < auditingFiles.length; k++) {
     console.log("Este registro foi adulterado.\n")
   }
   
-  }
+}
+
+
