@@ -1,50 +1,31 @@
-# TypeScript Blockchain
+# Blockchain TypeScript
 
-> 🇺🇸 Implementation of blockchain in TypeScript.
+> 🇧🇷 Implementação de blockchain em TypeScript.
 
-> 🇧🇷 Para a versão em Português, clique [aqui](README-pt.md). 🇧🇷
+## Descrição
 
-## Description
+Características atuais:
 
-Current features:
-
-- Runs in a single node
-- Can be used to create a new blockchain
-- Can be used to add new blocks to an existing blockchain
-- Can be used to verify the validity of a block
-- Blocks support any data on the payloads
-
-Future features:
-
-- Save the blockchain to a file
-- Add transaction support
-- Add branching support
-- Add token support
-- Distributed network
-- Distributed consensus
-- Distributed transaction
-- Distributed mining
+- Executa em um único nó
+- Pode ser usado para criar uma nova blockchain 
+- Pode ser usado para adicionar novos blocos a uma blockchain existente
+- Pode ser usado para verificar a validade de um bloco
 
 
-## Installation
+## Instalação
 
 ```bash
 npm i
 ```
 
-## Usage
+## Uso
 
-It takes a two optional parameters which are
+parâmetros opcionais:
 
-- the difficulty of the mining process. Default is `4`.
-- the number of blocks to mine. Default is `10`.
+- a dificuldade do processo de mineração. O padrão é `4`.
+- o número de blocos inseridos na blockchain principal. O padrão é `1`.
 
 ```bash
-npm start [difficulty = 4] [numberOfBlocks = 10]
+npm start [dificuldade = 4] [númeroDeBlocos = 1]
 ```
 
-## Forseeable To-Do
-
-- [ ] Distributed network
-- [ ] Refactor to make blocks a class instead of an interface so it can have internal methods to calculate hashes and nonces
-- [ ] Add small graph visualization frontend
