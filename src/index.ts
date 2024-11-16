@@ -418,5 +418,3 @@ for (let k = 0; k < auditingFiles.length; k++) {
   }
   
 }
-
-
