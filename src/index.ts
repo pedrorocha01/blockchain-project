@@ -5,15 +5,24 @@ const fs = require('node:fs');
 const path = require ('path');
 const pathFile = 'src/files/';
 
+interface Votation {
+  nameVotation: String;
+  votes: String[];
+}
+// criando array de objetos de votação
+const votation : Votation[] = [];
+//criando Objeto
+let currentVote : Votation = {nameVotation: '', votes:[]};
+
 // LISTA OS ARQUIVOS NO DIRETORIO
 let files = fs.readdirSync(pathFile);
 //arquivos atuais no diretorio
 let currentFiles: string[] = [];
-//blockchains temporarias já geradas
+//blockchains auxiliares já geradas
 let blockchainFiles: string[] = [];
-//novos arquivos 
+//novos arquivos csv dos resultados
 let newFiles: string[] = [];
-//blockchains temporarias já geradas
+//novas blockchains auxiliares geradas
 let newBlockchainFiles: string[] = [];
 
 //ARQUIVOS DE VOTAÇÃO .csv
@@ -22,24 +31,44 @@ files.forEach( (file: any) => {
     currentFiles.push(pathFile.concat(file));
 })
 
-//ARQUIVOS DE BLOCKCHAIN TEMPORARIA .txt
+//ARQUIVOS DE BLOCKCHAIN AUXILIAR
 files.forEach( (file: any) => {
   if (path.extname(file) == ".txt")
     blockchainFiles.push(pathFile.concat(file));
 })
 
+//ADICIONANDO BLOCKCHAINS AUXILIARES EXISTENTES AO ARRAY DE VOTACOES
+if(blockchainFiles.length > 0){
+
+    for (let i = 0; i < blockchainFiles.length; i++) {
+      var currentFile = blockchainFiles[i].split(".");
+      var nameFile = currentFile[0].split("/");
+      currentVote.nameVotation = nameFile[2].toString().concat(".txt");;     
+      for (let index = 0; index < currentFiles.length; index++) {
+        if(currentFiles[index].includes(nameFile[2])){
+          currentVote.votes.push(currentFiles[index]);
+        }       
+      }    
+      votation.push(currentVote);
+    }
+}
+
 //VERIFICANDO QUAIS SAO OS NOVOS ARQUIVOS
 for (let i = 0; i < currentFiles.length; i++) {
-  var currentFile = currentFiles[i].split(".");
-  var exist = 0;
-  for (let j = 0; j < blockchainFiles.length; j++) {
-    var blockchainFile = blockchainFiles[j].split(".");
-    if(currentFile[0] == blockchainFile[0]){
-      exist++;
-    } 
-  }
-  if(exist == 0){
-    newFiles.push(currentFiles[i]);
+  if(currentFiles[i] != 'added'){
+    var currentFile = currentFiles[i].split(".");
+    var currentVotation = currentFile[0].split("_");
+    //let currentVote : Votation = {nameVotation: '', votes:[]};
+    
+    currentVote.nameVotation = currentVotation[1].toString().concat(".txt");
+    currentVote.votes.push(currentFiles[i]);
+    for (let index = 0; index < currentFiles.length; index++) {
+      if(currentFiles[index].includes(currentVotation[1])){
+        currentVote.votes.push(currentFiles[index]);
+        currentFiles[index] = 'added';
+      }       
+    }   
+    votation.push(currentVote);
   }
 }
   
@@ -47,75 +76,100 @@ for (let i = 0; i < currentFiles.length; i++) {
 var MODE = "new";
 //PROPRIEDADES BLOCKCHAIN DE VOTOS
 let voteData: string[] = [];
-let opcoesVoto;
+let opcoesVoto: String[] = [];
 let qtdVotos: string[] = [];
 let qtdOpcoes;
 var qtdVotantes;
-let resultados: string[] = [];
+var changePath: string[] = [];
+
 
 //CRIAÇÃO DAS BLOCKCHAINS TEMPORÁRIAS
-for (let k = 0; k < newFiles.length; k++) {
+for (let k = 0; k < votation.length; k++) {
 
-try {
-  const data = fs.readFileSync(newFiles[k], 'utf8');
+  for (let index = 0; index < votation[k].votes.length; index++) {
 
-    var size = data.toString().split('\r\n').length;
-    var linhas = data.split("\r\n", size);
-    qtdVotantes = size;
-    qtdOpcoes = linhas[0].toString().split(';').length;
-    opcoesVoto = linhas[0].split(";", qtdOpcoes);
-    qtdVotos = new Array(qtdOpcoes).fill(0);
-
-    let vote;
-    let j = 0;
-    for(let i = 0 ; i < qtdVotantes - 1; i++){
-      voteData[i] = linhas[i+1];
-      vote = voteData[i].split(";", 2);
-      for (let j = 0; j < opcoesVoto.length; j++) {
-        if(vote[1] == opcoesVoto[j]){
-          qtdVotos[j] = qtdVotos[j] + 1;
-        }
-      }
+    try {
+      const data = fs.readFileSync(votation[k].votes[index], 'utf8');
+    
+        var size = data.toString().split('\r\n').length;
+        var linhas = data.split("\r\n", size);
+        voteData[index] = linhas[3];
+        console.log(linhas[3]);
+       
+    } catch (err) {
+      console.error(err);
     }
-    console.log(qtdVotos);
 
+    //let newPath = "src/autitingFiles";
+    //let newPathFile = newPath.concat(votation[k].votes[index].toString());
+    changePath.push(votation[k].votes[index].toString());
+    
+  }
 
-} catch (err) {
-  console.error(err);
+//LENDO BLOCKCHAIN AUXILIAR EXISTENTE
+let dataResume: string = '';
+let sizeBlockMain: number = 0;
+let contentLastBlock: string = 'empty';
+let lastSequence: number = 0;
+
+let fileVotation = (votation[k].nameVotation).toString();
+if(blockchainFiles.includes(fileVotation)){
+
+    try {
+      const data = fs.readFileSync(fileVotation, 'utf8');
+      
+        var size = data.toString().split('\r\n').length;
+        sizeBlockMain = size - 3;
+        let content;
+
+        if(size > 3){
+          var linhas = data.split("\r\n", size);     
+          for(let i = 0 ; i < size - 1; i++){        
+            dataResume = dataResume.concat(linhas[i]).concat("\r\n");
+            if(i == size - 2){
+              // ultimo previousHash existente
+              content = linhas[i].split(";", 6);
+              contentLastBlock = content[1];
+              lastSequence = Number(content[0]);
+            }
+          }
+        }
+        
+    } catch (err) {
+      console.error(err);
+    }
 }
 
-let resultado = 'RESULTADO: |';
-for (let j = 0; j < qtdVotos.length; j++) {
-  resultado = resultado.concat(opcoesVoto[j]).concat(":").concat(qtdVotos[j]).concat("|");
+// DEFININDO MODO DE CRIAÇÃO DE BLOCKCHAIN AUXILIAR
+if(contentLastBlock != 'empty'){
+  MODE = 'add';
 }
-resultados[k] = resultado;
-
 // CRIANDO BLOCKCHAIN TEMPORÁRIA
-const newBlockchain = new BlockChain(Number(4), MODE, '', 0)
+const newBlockchain = new BlockChain(Number(4), MODE, contentLastBlock, lastSequence)
 let newChain = newBlockchain.chain
+//const newBlockchain = new BlockChain(Number(4), MODE, '', 0)
+//let newChain = newBlockchain.chain
 
-for(let i = 0; i < qtdVotantes - 1; i++) {
+for(let i = 0; i < votation[k].votes.length; i++) {
   const newblock = newBlockchain.createBlock(voteData[i])
   const mineInfo = newBlockchain.mineBlock(newblock)
   newChain = newBlockchain.pushBlock(mineInfo.minedBlock)
 }
 
-
-try {
-  fs.writeFileSync(newFiles[k], "\r\n".concat(resultados[k]), {flag: 'a+'});  
-} catch (err) {
-   console.error(err);
-}
-
-
-let dataVoteBlockchain: string = ';'
+let dataVoteBlockchain: string = ''
 
 try {
 
        //escrevendo blockchain saída
        let dataBlockchain : string = '';
        let title: string = 'Number;BlockHash;Previous_BlockHash;Content_Hash;Nonce;TimeStamp';
-       dataBlockchain = dataBlockchain.concat(title, "\r\n");
+       let inicio : number = 1;
+       if(contentLastBlock == 'empty'){
+        inicio = 0;
+        dataBlockchain = dataBlockchain.concat(title, "\r\n");
+      }else{
+        dataBlockchain = dataBlockchain.concat(dataResume);
+      }
        //HEADER
        let _nonce : string;
        let _blockHash : string;
@@ -126,27 +180,31 @@ try {
        let _previousHah :string;
        let line: string = '';
  
-       for (let index = 0; index < qtdVotantes; index++) {
-           line = '';
-           _nonce = newChain[index].header.nonce.toString();
-           _blockHash = newChain[index].header.blockHash;
-           _sequence = newChain[index].payload.sequence.toString();
-           _timestamp = newChain[index].payload.timestamp.toString();
-           _data = newChain[index].payload.data;
-           _data = _data.replace(";", ":");
-           _previousHah = newChain[index].payload.previousHash;
-           line = line.concat(_sequence, ";", _blockHash, ";", _previousHah, ";", _data, ";", _nonce, ";", _timestamp);
-           dataBlockchain = dataBlockchain.concat(line, "\r\n");
-       }
+       if(newChain.length != 0){
+            for (let index = inicio; index < votation[k].votes.length; index++) {
+            line = '';
+            _nonce = newChain[index].header.nonce.toString();
+            _blockHash = newChain[index].header.blockHash;
+            _sequence = newChain[index].payload.sequence.toString();
+            if(MODE == 'add' && _sequence == '1'){
+              _sequence = (Number(_sequence) + sizeBlockMain).toString();
+              sizeBlockMain = Number(_sequence);
+            }
+            _timestamp = newChain[index].payload.timestamp.toString();
+            _data = newChain[index].payload.data;
+            _data = _data.replace(";", ":");
+            _previousHah = newChain[index].payload.previousHash;
+            line = line.concat(_sequence, ";", _blockHash, ";", _previousHah, ";", _data, ";", _nonce, ";", _timestamp);
+            dataBlockchain = dataBlockchain.concat(line, "\r\n");
+            }
+      }
  
       dataVoteBlockchain = dataBlockchain;
+      fileVotation = "src/files/".concat(fileVotation);
 
-      let fileName = newFiles[k].toString().split('.', 2);
-      let arquivoSaida = fileName[0].toString().concat('.txt');
-
-      newBlockchainFiles.push(arquivoSaida);
+      newBlockchainFiles.push(fileVotation);
   
-  fs.writeFileSync(arquivoSaida, dataVoteBlockchain);
+  fs.writeFileSync(fileVotation, dataVoteBlockchain);
   // file written successfully
 } catch (err) {
   console.error(err);
@@ -154,33 +212,44 @@ try {
 
 }
 
+let tamCurrentBlockchain;
+let maxTamBlockchain;
 //AUDITORIA DOS ARQUIVOS
-for (let k = 0; k < newFiles.length; k++) {
+for (let k = 0; k < votation[k].votes.length; k++) {
 
-console.log("AUDITORIA DO ARQUIVO:" + newFiles[k]);
+
 
 let auditingFile : string[] = [];
 let auditingBlockchain : string[] = [];
-     
-try {
-  const data = fs.readFileSync(newFiles[k], 'utf8');
 
-    var size = data.toString().split('\r\n').length;
-    var linhas = data.split("\r\n", size);
-    for(let i = 0 ; i < size - 1 ; i++){
-      auditingFile[i] = linhas[i+1].replace(";", ":");;
-    }
+for (let index = 0; index < votation[k].votes.length; index++) {
+  console.log("AUDITORIA DO ARQUIVO:" + votation[k].votes[index]);
 
-
-} catch (err) {
-  console.error(err);
+  try {
+    const data = fs.readFileSync(votation[k].votes[index], 'utf8');
+  
+      var size = data.toString().split('\r\n').length;
+      var linhas = data.split("\r\n", size);
+      tamCurrentBlockchain = size - 3;
+      maxTamBlockchain = linhas[1];
+      for(let i = 0 ; i < size - 1 ; i++){
+        auditingFile[i] = linhas[2].replace(";", ":");;
+      }
+  
+  
+  } catch (err) {
+    console.error(err);
+  }
+  
 }
 
+let resultFile = '';
 try {
   const data = fs.readFileSync(newBlockchainFiles[k], 'utf8');
 
     var size = data.toString().split('\r\n').length;
     var linhas = data.split("\r\n", size);
+    
     let blockData;
     for(let i = 0 ; i < size - 3; i++){
       blockData = linhas[i+2]
@@ -190,6 +259,67 @@ try {
 
 } catch (err) {
   console.error(err);
+}
+
+//SE A BLOCKCHAIN ATINGIU O TAMANHO O RESULTADO SERÁ CALCULADO
+if((tamCurrentBlockchain) == maxTamBlockchain){
+
+  let resultados: string[] = [];
+  try {
+    const data = fs.readFileSync(newBlockchainFiles[k], 'utf8');
+  
+      var size = data.toString().split('\r\n').length;
+      var linhas = data.split("\r\n", size);
+      qtdVotantes = size - 3;
+      //qtdOpcoes = linhas[0].toString().split(';').length;
+      //opcoesVoto = linhas[0].split(";", qtdOpcoes);
+      qtdVotos = new Array(qtdOpcoes).fill(0);
+  
+      let vote;
+      let counter : String[] = [];
+      for(let i = 2 ; i < qtdVotantes + 2; i++){
+        var arrayVote = linhas[i].split(";");
+        resultFile = resultFile + arrayVote[3] + "\r\n";
+        vote = arrayVote[3].split(":", 2);
+        counter.push(vote);
+        if(!(opcoesVoto.includes(vote))){
+          opcoesVoto.push(vote);
+        }
+      }
+
+      let options = '';
+      //contando os votos
+      for (let i = 0; i < opcoesVoto.length; i++) {
+        options = options + opcoesVoto[i] + ";";
+        for (let j = 0; j < counter.length; j++) {
+          if(counter[j] == opcoesVoto[i]){
+            qtdVotos[i] = qtdVotos[i] + 1;
+          }         
+        }
+      }
+
+      resultFile = options + "\r\n" + resultFile;
+  
+  
+  } catch (err) {
+    console.error(err);
+  }
+
+  let resultado = 'RESULTADO: |';
+  for (let j = 0; j < qtdVotos.length; j++) {
+    resultFile = resultado.concat(opcoesVoto[j].toString()).concat(":").concat(qtdVotos[j]).concat("|");
+  }
+  //resultados[k] = resultado;
+  let nameFile = (votation[k].nameVotation).toString().split(".");
+  let newFile = nameFile[0].concat(".csv")
+  newFiles.push(newFile);
+
+  try {
+    fs.writeFileSync(newFile, "\r\n".concat(resultFile), {flag: 'a+'});  
+  } catch (err) {
+  console.error(err);
+  }
+
 }
 
 let fail = 0;
@@ -206,6 +336,25 @@ if(fail == 0){
 }else{
   console.log(fail + " votos foram adulterados.\n")
 }
+
+
+//TROCAR OS ARQUIVOS DE DIRETORIO
+for (let index = 0; index < changePath.length; index++) {
+  let pastaDestino = 'src/auditingFiles';
+  let arquivoDestino = path.join(pastaDestino, changePath[index]);
+  fs.rename(changePath[index], arquivoDestino, (erro: Error) =>{
+    if(erro){
+        console.error('Erro ao mover arquivo: ${erro}');
+    }else{
+        //sucesso
+    }
+    
+  });
+}
+
+
+//COLOCAR ARQUIVOS DE VOTOS EM AUDITING FILES APÓS AUDITADOS
+// COLOCAR ARQUIVO DE RESULTADO EM RESULT FILES
 
 }
 
@@ -383,13 +532,17 @@ try {
     console.error(err);
   }
 
+  //LENDO ARQUIVOS DE RESULT FILES ORGANIZADOS EM SEQUENCIA POR auditados.csv
+if(auditingFiles.length > 0){
 for (let k = 0; k < auditingFiles.length; k++) {
 
   let fail = 0;
   console.log("AUDITORIA DO ARQUIVO:" + auditingFiles[k]);
 
   try {
-    let data = fs.readFileSync(auditingFiles[k], 'utf8');
+    let pathResult = 'src/resultFiles/';
+    pathResult = pathResult.concat(auditingFiles[k]);
+    let data = fs.readFileSync(pathResult, 'utf8');
 
     var size = data.toString().split('\r\n').length;
     var linhas = data.split("\r\n", size);
@@ -417,4 +570,5 @@ for (let k = 0; k < auditingFiles.length; k++) {
     console.log("Este registro foi adulterado.\n")
   }
   
+}
 }
