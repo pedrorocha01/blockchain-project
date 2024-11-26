@@ -1,10 +1,12 @@
 # Sistema de auditoria de votação baseado em tecnologia blockchain
 
-- Arquivos de votação: arquivos que contém as opções de voto, a identificação do votante e os votos.
+- Arquivos de voto: arquivos que contém as opções de voto, a identificação do votante e os votos.
 
 - Votantes: entidade identificada por um número que pode ser um documento ou outro código único intransferível.
 
 - Blockchains Auxiliares: blockchains que serão criadas para representar um voto em cada bloco, e usadas como parâmetro de confiança para auditoria dos arquivos de votação.
+
+- Arquivos de votação: arquivos gerados após a auditoria dos arquivos de voto pela blockchain auxiliar correspondente.
 
 - Blockchain Principal: blockchain que vai guardar os blocos resumidos.
 
