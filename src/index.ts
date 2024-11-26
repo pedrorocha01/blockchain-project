@@ -11,8 +11,6 @@ interface Votation {
 }
 // criando array de objetos de votação
 const votation : Votation[] = [];
-//criando Objeto
-let currentVote : Votation = {nameVotation: '', votes:[]};
 
 // LISTA OS ARQUIVOS NO DIRETORIO
 let files = fs.readdirSync(pathFile);
@@ -41,12 +39,16 @@ files.forEach( (file: any) => {
 if(blockchainFiles.length > 0){
 
     for (let i = 0; i < blockchainFiles.length; i++) {
+      let currentVote : Votation = {nameVotation: '', votes:[]};
       var currentFile = blockchainFiles[i].split(".");
       var nameFile = currentFile[0].split("/");
-      currentVote.nameVotation = nameFile[2].toString().concat(".txt");;     
+      console.log(nameFile);
+      let arquivo = nameFile[2];
+      currentVote.nameVotation = arquivo + ".txt";     
       for (let index = 0; index < currentFiles.length; index++) {
-        if(currentFiles[index].includes(nameFile[2])){
+        if(currentFiles[index].includes(arquivo)){
           currentVote.votes.push(currentFiles[index]);
+          currentFiles[index] = 'added';
         }       
       }    
       votation.push(currentVote);
@@ -58,17 +60,17 @@ for (let i = 0; i < currentFiles.length; i++) {
   if(currentFiles[i] != 'added'){
     var currentFile = currentFiles[i].split(".");
     var currentVotation = currentFile[0].split("_");
-    //let currentVote : Votation = {nameVotation: '', votes:[]};
+    let newCurrentVote : Votation = {nameVotation: '', votes:[]};
     
-    currentVote.nameVotation = currentVotation[1].toString().concat(".txt");
-    currentVote.votes.push(currentFiles[i]);
+    newCurrentVote.nameVotation = currentVotation[1].toString().concat(".txt");
+    //currentVote.votes.push(currentFiles[i]);
     for (let index = 0; index < currentFiles.length; index++) {
       if(currentFiles[index].includes(currentVotation[1])){
-        currentVote.votes.push(currentFiles[index]);
+        newCurrentVote.votes.push(currentFiles[index]);
         currentFiles[index] = 'added';
       }       
     }   
-    votation.push(currentVote);
+    votation.push(newCurrentVote);
   }
 }
   
@@ -112,8 +114,10 @@ let sizeBlockMain: number = 0;
 let contentLastBlock: string = 'empty';
 let lastSequence: number = 0;
 
-let fileVotation = (votation[k].nameVotation).toString();
-if(blockchainFiles.includes(fileVotation)){
+
+let fileVotation = votation[k].nameVotation.toString();
+let pathFileVotation = 'src/files/' + fileVotation;
+if(blockchainFiles.includes(pathFileVotation)){
 
     try {
       const data = fs.readFileSync(fileVotation, 'utf8');
@@ -181,7 +185,7 @@ try {
        let line: string = '';
  
        if(newChain.length != 0){
-            for (let index = inicio; index < votation[k].votes.length; index++) {
+            for (let index = inicio; index < votation[k].votes.length + 1; index++) {
             line = '';
             _nonce = newChain[index].header.nonce.toString();
             _blockHash = newChain[index].header.blockHash;
@@ -215,8 +219,8 @@ try {
 let tamCurrentBlockchain;
 let maxTamBlockchain;
 //AUDITORIA DOS ARQUIVOS
-for (let k = 0; k < votation[k].votes.length; k++) {
-
+//E CALCULO DOS RESULTADOS CASO TENHA O TAMANHO MAXIMO
+for (let k = 0; k < votation.length; k++) {
 
 
 let auditingFile : string[] = [];
@@ -230,11 +234,9 @@ for (let index = 0; index < votation[k].votes.length; index++) {
   
       var size = data.toString().split('\r\n').length;
       var linhas = data.split("\r\n", size);
-      tamCurrentBlockchain = size - 3;
       maxTamBlockchain = linhas[1];
-      for(let i = 0 ; i < size - 1 ; i++){
-        auditingFile[i] = linhas[2].replace(";", ":");;
-      }
+      auditingFile[index] = linhas[3].replace(";", ":");;
+
   
   
   } catch (err) {
@@ -248,10 +250,13 @@ try {
   const data = fs.readFileSync(newBlockchainFiles[k], 'utf8');
 
     var size = data.toString().split('\r\n').length;
+    tamCurrentBlockchain = size - 3;
     var linhas = data.split("\r\n", size);
     
+    // auditoria das novas entradas
+    let begin = tamCurrentBlockchain - votation[k].votes.length - 1;
     let blockData;
-    for(let i = 0 ; i < size - 3; i++){
+    for(let i = begin ; i < tamCurrentBlockchain; i++){
       blockData = linhas[i+2]
       blockData = blockData.split(";", 6);
       auditingBlockchain[i] = blockData[3];
@@ -264,28 +269,27 @@ try {
 //SE A BLOCKCHAIN ATINGIU O TAMANHO O RESULTADO SERÁ CALCULADO
 if((tamCurrentBlockchain) == maxTamBlockchain){
 
-  let resultados: string[] = [];
+ 
   try {
     const data = fs.readFileSync(newBlockchainFiles[k], 'utf8');
   
       var size = data.toString().split('\r\n').length;
       var linhas = data.split("\r\n", size);
       qtdVotantes = size - 3;
-      //qtdOpcoes = linhas[0].toString().split(';').length;
-      //opcoesVoto = linhas[0].split(";", qtdOpcoes);
-      qtdVotos = new Array(qtdOpcoes).fill(0);
-  
+      
       let vote;
       let counter : String[] = [];
       for(let i = 2 ; i < qtdVotantes + 2; i++){
         var arrayVote = linhas[i].split(";");
         resultFile = resultFile + arrayVote[3] + "\r\n";
         vote = arrayVote[3].split(":", 2);
-        counter.push(vote);
-        if(!(opcoesVoto.includes(vote))){
-          opcoesVoto.push(vote);
+        counter.push(vote[1]);
+        if(!(opcoesVoto.includes(vote[1]))){
+          opcoesVoto.push(vote[1]);
         }
       }
+
+      qtdVotos = new Array(opcoesVoto.length).fill(0);
 
       let options = '';
       //contando os votos
@@ -305,57 +309,60 @@ if((tamCurrentBlockchain) == maxTamBlockchain){
     console.error(err);
   }
 
-  let resultado = 'RESULTADO: |';
+  let resultadoFinal = 'RESULTADO: |';
+  let resultados = '';
   for (let j = 0; j < qtdVotos.length; j++) {
-    resultFile = resultado.concat(opcoesVoto[j].toString()).concat(":").concat(qtdVotos[j]).concat("|");
+    resultados =  resultados.concat(opcoesVoto[j].toString()).concat(":").concat(qtdVotos[j]).concat("|");
   }
-  //resultados[k] = resultado;
+  resultadoFinal = resultadoFinal + resultados;
+  resultFile = resultFile + resultadoFinal;
+
   let nameFile = (votation[k].nameVotation).toString().split(".");
-  let newFile = nameFile[0].concat(".csv")
+  let newFile = 'src/files/' + nameFile[0].concat(".csv")
   newFiles.push(newFile);
 
   try {
-    fs.writeFileSync(newFile, "\r\n".concat(resultFile), {flag: 'a+'});  
+    fs.writeFileSync(newFile, resultFile, {flag: 'a+'});  
   } catch (err) {
   console.error(err);
   }
 
 }
 
-let fail = 0;
-for (let index = 0; index < size - 3; index++) {
-    if(auditingBlockchain[index] == auditingFile[index]){
-      console.log("Voto auditado:" + auditingFile[index]);
-    }else{
-        fail++;
-    }
-}
+  let fail = 0;
+  for (let index = 0; index < size - 3; index++) {
+      if(auditingBlockchain[index] == auditingFile[index]){
+        console.log("Voto auditado:" + auditingFile[index]);
+      }else{
+          fail++;
+      }
+  }
 
-if(fail == 0){
-  console.log("Todos os votos auditados com sucesso!\n");
-}else{
-  console.log(fail + " votos foram adulterados.\n")
+  if(fail == 0){
+    console.log("Todos os votos auditados com sucesso!\n");
+  }else{
+    console.log(fail + " votos foram adulterados.\n")
+  }
+
 }
 
 
 //TROCAR OS ARQUIVOS DE DIRETORIO
+//COLOCAR ARQUIVOS DE VOTOS EM AUDITING FILES APÓS AUDITADOS
+// COLOCAR ARQUIVO DE RESULTADO EM RESULT FILES
 for (let index = 0; index < changePath.length; index++) {
-  let pastaDestino = 'src/auditingFiles';
-  let arquivoDestino = path.join(pastaDestino, changePath[index]);
+  let origem = changePath[index].split("/");
+  let arquivoOrigem = origem[2];
+  let pastaDestino = 'src/files/auditedFiles/';
+  let arquivoDestino = pastaDestino + arquivoOrigem;
   fs.rename(changePath[index], arquivoDestino, (erro: Error) =>{
     if(erro){
-        console.error('Erro ao mover arquivo: ${erro}');
+        console.error('Erro ao mover arquivo' + erro);
     }else{
         //sucesso
     }
     
   });
-}
-
-
-//COLOCAR ARQUIVOS DE VOTOS EM AUDITING FILES APÓS AUDITADOS
-// COLOCAR ARQUIVO DE RESULTADO EM RESULT FILES
-
 }
 
 //LENDO BLOCKCHAIN RESUMO EXISTENTE
@@ -479,7 +486,7 @@ for (let index = 0; index < newFiles.length; index++) {
 }
 
 try {
-fs.writeFileSync('src/auditados.csv', dataFiles, {flag: 'a+'});
+fs.writeFileSync('src/insertControl.csv', dataFiles, {flag: 'a+'});
 // file written successfully
 } catch (err) {
 console.error(err);
@@ -489,7 +496,7 @@ console.error(err);
 let auditingFiles: string[] = [];
 
 try {
-  let data = fs.readFileSync('src/auditados.csv', 'utf8');
+  let data = fs.readFileSync('src/insertControl.csv', 'utf8');
     var size = data.toString().split('\r\n').length;
     var linhas = data.split("\r\n", size);
 
@@ -540,9 +547,9 @@ for (let k = 0; k < auditingFiles.length; k++) {
   console.log("AUDITORIA DO ARQUIVO:" + auditingFiles[k]);
 
   try {
-    let pathResult = 'src/resultFiles/';
-    pathResult = pathResult.concat(auditingFiles[k]);
-    let data = fs.readFileSync(pathResult, 'utf8');
+   // let pathResult = 'src/resultFiles/';
+   // pathResult = pathResult.concat(auditingFiles[k]);
+    let data = fs.readFileSync(auditingFiles[k], 'utf8');
 
     var size = data.toString().split('\r\n').length;
     var linhas = data.split("\r\n", size);
