@@ -22,6 +22,8 @@ let blockchainFiles: string[] = [];
 let newFiles: string[] = [];
 //novas blockchains auxiliares geradas
 let newBlockchainFiles: string[] = [];
+//blockchain auxiliares ja auditadas
+let auditedBlockchains: string[] = [];
 
 //NOVOS ARQUIVOS DE VOTO .csv
 files.forEach( (file: any) => {
@@ -95,7 +97,6 @@ if(currentFiles.length > 0){
         var size = data.toString().split('\r\n').length;
         var linhas = data.split("\r\n", size);
         voteData[index] = linhas[3];
-        console.log(linhas[3]);
        
     } catch (err) {
       console.error(err);
@@ -117,7 +118,7 @@ if(currentFiles.length > 0){
   if(blockchainFiles.includes(pathFileVotation)){
 
     try {
-      const data = fs.readFileSync(fileVotation, 'utf8');
+      const data = fs.readFileSync(pathFileVotation, 'utf8');
       
         var size = data.toString().split('\r\n').length;
         sizeBlockMain = size - 3;
@@ -313,6 +314,8 @@ if(currentFiles.length > 0){
     let nameFile = (votation[k].nameVotation).toString().split(".");
     let newFile = 'src/files/resultFiles/' + nameFile[0].concat(".csv")
     newFiles.push(newFile);
+    let completeBlockchain = 'src/files/' + nameFile[0].concat(".txt");
+    auditedBlockchains.push(completeBlockchain);
 
     try {
       fs.writeFileSync(newFile, resultFile, {flag: 'a+'});  
@@ -341,7 +344,6 @@ if(currentFiles.length > 0){
 }
 
 //MOVE ARQUIVOS DE VOTOS EM AUDITING FILES APÓS AUDITADOS
-//MOVE ARQUIVO DE RESULTADO EM RESULT FILES
 for (let index = 0; index < changePath.length; index++) {
   let origem = changePath[index].split("/");
   let arquivoOrigem = origem[2];
@@ -352,8 +354,22 @@ for (let index = 0; index < changePath.length; index++) {
         console.error('Erro ao mover arquivo' + erro);
     }else{
         //sucesso
-    }
-    
+    }    
+  });
+}
+
+//MOVE ARQUIVO DE RESULTADO PARA RESULT FILES
+for (let index = 0; index < auditedBlockchains.length; index++) {
+  let origem = auditedBlockchains[index].split("/");
+  let arquivoOrigem = origem[2];
+  let pastaDestino = 'src/files/resultFiles/';
+  let arquivoDestino = pastaDestino + arquivoOrigem;
+  fs.rename(auditedBlockchains[index], arquivoDestino, (erro: Error) =>{
+    if(erro){
+        console.error('Erro ao mover arquivo' + erro);
+    }else{
+        //sucesso
+    }  
   });
 }
 
