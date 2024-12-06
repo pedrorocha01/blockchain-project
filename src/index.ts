@@ -250,12 +250,12 @@ if(currentFiles.length > 0){
       var linhas = data.split("\r\n", size);
       
       // auditoria das novas entradas
-      let begin = tamCurrentBlockchain - votation[k].votes.length - 1;
+      let begin = tamCurrentBlockchain - votation[k].votes.length;
       let blockData;
       for(let i = begin ; i < tamCurrentBlockchain; i++){
         blockData = linhas[i+2]
         blockData = blockData.split(";", 6);
-        auditingBlockchain[i] = blockData[3];
+        auditingBlockchain.push(blockData[3]);
       }
 
   } catch (err) {
@@ -326,7 +326,7 @@ if(currentFiles.length > 0){
   }
 
     let fail = 0;
-    for (let index = 0; index < size - 3; index++) {
+    for (let index = 0; index < auditingFile.length; index++) {
         if(auditingBlockchain[index] == auditingFile[index]){
           console.log("Voto auditado:" + auditingFile[index]);
         }else{
