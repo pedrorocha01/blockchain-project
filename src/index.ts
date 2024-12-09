@@ -5,24 +5,24 @@ const fs = require('node:fs');
 const path = require ('path');
 const pathFile = 'src/files/';
 
-interface Votation {
-  nameVotation: String;
+interface Voting {
+  nameVoting: String;
   votes: String[];
 }
 // criando array de objetos de votação
-const votation : Votation[] = [];
+const voting : Voting[] = [];
 
 // LISTA OS ARQUIVOS NO DIRETORIO
 let files = fs.readdirSync(pathFile);
 //arquivos de voto atuais no diretorio
 let currentFiles: string[] = [];
-//blockchains auxiliares já geradas
+//blockchains temporárias já existentes
 let blockchainFiles: string[] = [];
 //novos arquivos de votacao com resultados
 let newFiles: string[] = [];
-//novas blockchains auxiliares geradas
+//novas blockchains temporárias geradas
 let newBlockchainFiles: string[] = [];
-//blockchain auxiliares ja auditadas
+//blockchain temporárias ja auditadas
 let auditedBlockchains: string[] = [];
 
 //NOVOS ARQUIVOS DE VOTO .csv
@@ -31,28 +31,28 @@ files.forEach( (file: any) => {
     currentFiles.push(pathFile.concat(file));
 })
 
-//ARQUIVOS DE BLOCKCHAIN AUXILIAR
+//ARQUIVOS DE BLOCKCHAIN TEMPORÁRIA
 files.forEach( (file: any) => {
   if (path.extname(file) == ".txt")
     blockchainFiles.push(pathFile.concat(file));
 })
 
-//ADICIONANDO BLOCKCHAINS AUXILIARES EXISTENTES AO ARRAY DE VOTACOES
+//ADICIONANDO BLOCKCHAINS TEMPORÁRIAS EXISTENTES AO ARRAY DE VOTACOES
 if(blockchainFiles.length > 0){
 
     for (let i = 0; i < blockchainFiles.length; i++) {
-      let currentVote : Votation = {nameVotation: '', votes:[]};
+      let currentVote : Voting = {nameVoting: '', votes:[]};
       var currentFile = blockchainFiles[i].split(".");
       var nameFile = currentFile[0].split("/");
       let arquivo = nameFile[2];
-      currentVote.nameVotation = arquivo + ".txt";     
+      currentVote.nameVoting = arquivo + ".txt";     
       for (let index = 0; index < currentFiles.length; index++) {
         if(currentFiles[index].includes(arquivo)){
           currentVote.votes.push(currentFiles[index]);
           currentFiles[index] = 'added';
         }       
       }    
-      votation.push(currentVote);
+      voting.push(currentVote);
     }
 }
 
@@ -60,17 +60,17 @@ if(blockchainFiles.length > 0){
 for (let i = 0; i < currentFiles.length; i++) {
   if(currentFiles[i] != 'added'){
     var currentFile = currentFiles[i].split(".");
-    var currentVotation = currentFile[0].split("_");
-    let newCurrentVote : Votation = {nameVotation: '', votes:[]};
+    var currentVoting = currentFile[0].split("_");
+    let newCurrentVote : Voting = {nameVoting: '', votes:[]};
     
-    newCurrentVote.nameVotation = currentVotation[1].toString().concat(".txt");
+    newCurrentVote.nameVoting = currentVoting[1].toString().concat(".txt");
     for (let index = 0; index < currentFiles.length; index++) {
-      if(currentFiles[index].includes(currentVotation[1])){
+      if(currentFiles[index].includes(currentVoting[1])){
         newCurrentVote.votes.push(currentFiles[index]);
         currentFiles[index] = 'added';
       }       
     }   
-    votation.push(newCurrentVote);
+    voting.push(newCurrentVote);
   }
 }
   
@@ -87,12 +87,12 @@ var changePath: string[] = [];
 
 //CRIAÇÃO DAS BLOCKCHAINS TEMPORÁRIAS
 if(currentFiles.length > 0){
-  for (let k = 0; k < votation.length; k++) {
+  for (let k = 0; k < voting.length; k++) {
 
-  for (let index = 0; index < votation[k].votes.length; index++) {
+  for (let index = 0; index < voting[k].votes.length; index++) {
 
     try {
-      const data = fs.readFileSync(votation[k].votes[index], 'utf8');
+      const data = fs.readFileSync(voting[k].votes[index], 'utf8');
     
         var size = data.toString().split('\r\n').length;
         var linhas = data.split("\r\n", size);
@@ -102,23 +102,23 @@ if(currentFiles.length > 0){
       console.error(err);
     }
 
-    changePath.push(votation[k].votes[index].toString());
+    changePath.push(voting[k].votes[index].toString());
     
   }
 
-  //LENDO BLOCKCHAIN AUXILIAR EXISTENTE
+  //LENDO BLOCKCHAIN TEMPORÁRIA EXISTENTE
   let dataResume: string = '';
   let sizeBlockMain: number = 0;
   let contentLastBlock: string = 'empty';
   let lastSequence: number = 0;
 
-  let fileVotation = votation[k].nameVotation.toString();
-  let pathFileVotation = 'src/files/' + fileVotation;
+  let fileVoting = voting[k].nameVoting.toString();
+  let pathFileVoting = 'src/files/' +fileVoting;
 
-  if(blockchainFiles.includes(pathFileVotation)){
+  if(blockchainFiles.includes(pathFileVoting)){
 
     try {
-      const data = fs.readFileSync(pathFileVotation, 'utf8');
+      const data = fs.readFileSync(pathFileVoting, 'utf8');
       
         var size = data.toString().split('\r\n').length;
         sizeBlockMain = size - 3;
@@ -142,7 +142,7 @@ if(currentFiles.length > 0){
     }
 }
 
-    // DEFININDO MODO DE CRIAÇÃO DE BLOCKCHAIN AUXILIAR
+    // DEFININDO MODO DE CRIAÇÃO DE BLOCKCHAIN TEMPORÁRIA
     if(contentLastBlock != 'empty'){
       MODE = 'add';
     }
@@ -150,7 +150,7 @@ if(currentFiles.length > 0){
     const newBlockchain = new BlockChain(Number(4), MODE, contentLastBlock, lastSequence)
     let newChain = newBlockchain.chain
 
-    for(let i = 0; i < votation[k].votes.length; i++) {
+    for(let i = 0; i < voting[k].votes.length; i++) {
       const newblock = newBlockchain.createBlock(voteData[i])
       const mineInfo = newBlockchain.mineBlock(newblock)
       newChain = newBlockchain.pushBlock(mineInfo.minedBlock)
@@ -181,7 +181,7 @@ if(currentFiles.length > 0){
           let line: string = '';
     
           if(newChain.length != 0){
-                for (let index = inicio; index < votation[k].votes.length + 1; index++) {
+                for (let index = inicio; index < voting[k].votes.length + 1; index++) {
                 line = '';
                 _nonce = newChain[index].header.nonce.toString();
                 _blockHash = newChain[index].header.blockHash;
@@ -200,11 +200,11 @@ if(currentFiles.length > 0){
           }
     
           dataVoteBlockchain = dataBlockchain;
-          fileVotation = "src/files/".concat(fileVotation);
+         fileVoting = "src/files/".concat(fileVoting);
 
-          newBlockchainFiles.push(fileVotation);
+          newBlockchainFiles.push(fileVoting);
       
-      fs.writeFileSync(fileVotation, dataVoteBlockchain);
+      fs.writeFileSync(fileVoting, dataVoteBlockchain);
       // file written successfully
     } catch (err) {
       console.error(err);
@@ -218,17 +218,17 @@ let maxTamBlockchain;
 //AUDITORIA DOS ARQUIVOS
 //CALCULO DOS RESULTADOS CASO TENHA O TAMANHO MAXIMO
 if(currentFiles.length > 0){
-  for (let k = 0; k < votation.length; k++) {
+  for (let k = 0; k < voting.length; k++) {
 
 
   let auditingFile : string[] = [];
   let auditingBlockchain : string[] = [];
 
-  for (let index = 0; index < votation[k].votes.length; index++) {
-    console.log("AUDITORIA DO ARQUIVO:" + votation[k].votes[index]);
+  for (let index = 0; index < voting[k].votes.length; index++) {
+    console.log("AUDITORIA DO ARQUIVO:" + voting[k].votes[index]);
 
     try {
-      const data = fs.readFileSync(votation[k].votes[index], 'utf8');
+      const data = fs.readFileSync(voting[k].votes[index], 'utf8');
     
         var size = data.toString().split('\r\n').length;
         var linhas = data.split("\r\n", size);
@@ -250,7 +250,7 @@ if(currentFiles.length > 0){
       var linhas = data.split("\r\n", size);
       
       // auditoria das novas entradas
-      let begin = tamCurrentBlockchain - votation[k].votes.length;
+      let begin = tamCurrentBlockchain - voting[k].votes.length;
       let blockData;
       for(let i = begin ; i < tamCurrentBlockchain; i++){
         blockData = linhas[i+2]
@@ -311,7 +311,7 @@ if(currentFiles.length > 0){
     resultadoFinal = resultadoFinal + resultados;
     resultFile = resultFile + resultadoFinal;
 
-    let nameFile = (votation[k].nameVotation).toString().split(".");
+    let nameFile = (voting[k].nameVoting).toString().split(".");
     let newFile = 'src/files/resultFiles/' + nameFile[0].concat(".csv")
     newFiles.push(newFile);
     let completeBlockchain = 'src/files/' + nameFile[0].concat(".txt");
@@ -373,7 +373,7 @@ for (let index = 0; index < auditedBlockchains.length; index++) {
   });
 }
 
-//LENDO BLOCKCHAIN RESUMO EXISTENTE
+//LENDO BLOCKCHAIN PERMANENTE EXISTENTE
 let dataResume: string = '';
 let sizeBlockMain: number = 0;
 let contentLastBlock: string = 'empty';
@@ -403,7 +403,7 @@ try {
   console.error(err);
 }
 
-// DEFININDO MODO DE CRIAÇÃO DE BLOCKCHAIN PRINCIPAL
+// DEFININDO MODO DE CRIAÇÃO DE BLOCKCHAIN PERMANENTE
 if(contentLastBlock != 'empty'){
   MODE = 'add';
 }
@@ -412,7 +412,7 @@ const blockNumber = +process.argv[3] || 1
 let chain = blockchain.chain
 
 
-//GERANDO BLOCKCHAIN RESUMO DOS NOVOS ARQUIVOS 
+//GERANDO BLOCKCHAIN PERMANENTE DOS NOVOS ARQUIVOS 
 let resumeChain: string[] = [];
 
 for (let k = 0; k < newFiles.length; k++) {
@@ -543,7 +543,7 @@ try {
     console.error(err);
   }
 
-  //LENDO ARQUIVOS DE RESULT FILES ORGANIZADOS EM SEQUENCIA POR auditados.csv
+  //LENDO ARQUIVOS DE RESULT FILES ORGANIZADOS EM SEQUENCIA POR insertControl.csv
 if(auditingFiles.length > 0){
   for (let k = 0; k < auditingFiles.length; k++) {
 
